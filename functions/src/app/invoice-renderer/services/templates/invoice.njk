@@ -1,0 +1,201 @@
+<div class="grid grid-cols-2 gap-x-8 items-start">
+		<dl class="flex flex-col gap-y-1">
+		<div class="flex flex-col">
+			<dt>{{ _.t("Invoice No.", primaryLanguage) }} / {{ __("Invoice No.", "pl") }}:</dt>
+      {% if vat_amount == 0 %}
+      <span class="italic text-lg">
+		{{ __("Reverse Charge") }} / {{ __("Reverse Charge", "pl") }}
+        Reverse Charge / Odwrotne Obciążenie
+      </span>
+      {% endif %}
+			<dd class="text-6xl font-bold">{{invoice_number}}</dd>
+		</div>
+    <div class="flex gap-x-2">
+			<dt>Place / Miejsce wystawienia:</dt>
+			<dd>{{seller[0].adress.city}}</dd>
+		</div>
+
+		<div class="flex gap-x-2">
+			<dt>Issue date / Data wystawienia:</dt>
+			<dd>{{issue_date}}</dd>
+		</div>
+	</dl>
+	<div class="p-6">
+		<img src="{{seller[0].information.logo[0]}}" />
+	</div>
+</div>
+
+
+<hr class="my-8" />
+
+<div class="grid grid-cols-3 items-start">
+	<div class="flex flex-col gap-y-4">
+		<h6 class="text-lg font-medium">Seller / Sprzedawca:</h6>
+		<dl class="flex flex-col gap-y-1">
+			<div class="flex gap-x-2">
+				<dd class="">{{seller[0].information.name}}</dd>
+			</div>
+
+			<div class="flex flex-col">
+				<dt>{{seller[0].adress.street}}</dt>
+				<dd>{{seller[0].adress.postcode}} {{seller[0].adress.city}}</dd>
+			</div>
+
+			<div class="flex gap-x-2">
+				<dt class="whitespace-nowrap">VAT ID / NIP</dt>
+				<dd>{{seller[0].information.vat_id}}</dd>
+			</div>
+
+			<div class="flex flex-col">
+				<dt>{{seller[0].bank.name}}</dt>
+				<dd class="flex flex-col">
+					<span>
+						{{seller[0].bank.account}}
+					</span>
+					{% if seller[0].bank.swift != "" %}
+					<span class="seller-bank-swift">
+						SWIFT: <span>{{seller[0].bank.swift}}</span>
+					</span>
+					{% endif %}
+				</dd>
+			</div>
+		</dl>
+	</div>
+	<div>&nbsp;</div>
+	<div class="flex flex-col gap-y-4">
+		<h6 class="text-lg font-medium">Buyer / Nabywca:</h6>
+		<dl class="flex flex-col gap-y-1">
+			<div class="flex gap-x-2">
+				<dd class="">{{client.name}}</dd>
+			</div>
+
+			<div class="flex flex-col">
+				<dt>{{client.street}}</dt>
+				<dd>{{client.postcode}} {{client.city}}, {{client.country}}</dd>
+			</div>
+
+			<div class="flex gap-x-2">
+				<dt>VAT ID</dt>
+				<dd>{{client.tax_identification_number}}</dd>
+			</div>
+		</dl>
+	</div>
+</div>
+
+
+<table class="border-collapse mb-8 numeric-tabular table table-auto w-full my-8">
+	<thead>
+		<tr class="text-white">
+			<th class="font-normal text-left bg-gradient-to-b from-gray-600 to-gray-400">No.&nbsp;/ LP</th>
+			<th class="font-normal text-left bg-gradient-to-b from-gray-600 to-gray-400">Item&nbsp;/ Nazwa&nbsp;towaru&nbsp;/ usługi</th>
+			<th class="font-normal text-right bg-gradient-to-b from-gray-600 to-gray-400">Qty&nbsp;/ Ilość</th>
+			<th class="font-normal text-right bg-gradient-to-b from-gray-600 to-gray-400">Unit&nbsp;net&nbsp;price&nbsp;/ Cena&nbsp;netto</th>
+			<th class="font-normal text-right bg-gradient-to-b from-gray-600 to-gray-400">Total&nbsp;net&nbsp;/ Wartość&nbsp;netto</th>
+			<th class="font-normal text-right bg-gradient-to-b from-gray-600 to-gray-400">VAT&nbsp;/ VAT&nbsp;%</th>
+			<th class="font-normal text-right bg-gradient-to-b from-gray-600 to-gray-400">VAT&nbsp;amount&nbsp;/ Wartość&nbsp;VAT</th>
+			<th class="font-normal text-right bg-gradient-to-b from-gray-600 to-gray-400">Total&nbsp;gross&nbsp;/ Wartość&nbsp;brutto</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for entry in entries %}
+		<tr>
+			<td class="text-center">{{loop.index}}</td>
+			<td class="text-left">{{entry.name}}</td>
+			<td class="text-center">
+				{{entry.quantity}}{% if entry.unit == "hours"%}&nbsp;hours{% endif %}
+			</td>
+			<td class="text-right">{{entry.net_price | format_price}}</td>
+			<td class="text-right">{{entry.total_net | format_price}}</td>
+			<td class="text-right">{{entry.vat | format_price}}</td>
+			<td class="text-right">{{entry.vat_amount | format_price}}</td>
+			<td class="text-right">{{entry.total_gross | format_price}}</td>
+		</tr>
+		{% endfor %}
+	</tbody>
+	<tfoot>
+		<tr>
+			<td colSpan="2" style="border:0">&nbsp;</td>
+			<td colSpan="2" class="text-right text-white bg-gradient-to-b from-gray-600 to-gray-400">
+				<div class="flex flex-col">
+					<span>Tax rate / W tym</span>
+					<span>Total / Razem</span>
+				</div>
+			</td>
+			<td class="text-right">
+				<div class="flex flex-col">
+					<span>{{total_net}}</span>
+					<span>{{total_net}}</span>
+				</div>
+			</td>
+			<td class="text-right" valign=top>
+				{{entries[0].vat}}
+			</td>
+			<td class="text-right">
+				<div class="flex flex-col">
+					<span>{{vat_amount}}</span>
+					<span>{{vat_amount}}</span>
+				</div>
+			</td>
+			<td class="text-right">
+				<div class="flex flex-col">
+					<span>{{total_gross}}</span>
+					<span>{{total_gross}}</span>
+				</div>
+			</td>
+		</tr>
+	</tfoot>
+</table>
+
+<div class="flex justify-end gap-x-8 text-xl leading-relaxed pr-4">
+	<div class="flex flex-col">
+		<span>Total net price / Wartość netto</span>
+		<span>VAT amount / Wartość VAT</span>
+		<span>Total gross price / Wartość brutto</span>
+	</div>
+
+	<div class="flex flex-col text-right font-semibold">
+		<span>{{formatted_total_net}}</span>
+		<span>{{formatted_vat_amount}}</span>
+		<span>{{formatted_total_gross}}</span>
+	</div>
+
+
+	{% if invoice_in_foreign_currency %}
+	<div class="flex flex-col text-right font-semibold">
+		<span>{{total_net_in_pln}}</span>
+		<span>{{vat_amount_in_pln}}</span>
+		<span>{{total_gross_in_pln}}</span>
+	</div>
+	{% endif %}
+</div>
+{% if invoice_in_foreign_currency %}
+<hr class="my-8" />
+<div>
+	Rate of exchange PLN/{{currency}} {{rate.mid}}, NBP foreign exchange reference rates no {{rate.no}} at {{rate.effectiveDate}}&nbsp;/
+	Kurs waluty PLN/{{currency}} {{rate.mid}}, tabela kursów średnich NBP nr {{rate.no}} z dnia {{rate.effectiveDate}}
+
+	<div class="text-xl leading-relaxed">
+		Exchanged tax amount / Przeliczona kwota VAT: <span class="font-semibold">{{vat_amount_in_pln}}</span>
+	</div>
+</div>
+{% endif %}
+
+<hr class="my-8" />
+
+<div>
+	<span>Total due / Do zapłaty:</span>
+	<span class="text-2xl font-semibold whitespace-nowrap">{{formatted_total_gross}}</span>
+	(In words / Słownie: <span class="italic">{{ total_gross_in_words }}</span>)
+</div>
+
+<hr class="my-8" />
+
+<div class="grid grid-cols-2 gap-x-8 items-center">
+
+	<img class="h-[128px]" src="{{seller[0].information.signature[0]}}" />
+
+
+	<div class="text-center">Seller's signature / Imię i nazwisko wystawcy
+		<div class="font-semibold text-xl leading-relaxed">{{seller[0].information.name}}</div>
+	</div>
+</div>

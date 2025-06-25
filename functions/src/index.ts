@@ -7,13 +7,20 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-import * as logger from 'firebase-functions/logger'
 import { onRequest } from 'firebase-functions/v2/https'
+import { createNestServer } from './app/main'
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
 
-export const helloWorld = onRequest((request, response) => {
-  logger.info('Hello logs!', { structuredData: true })
-  response.send('Hello from Firebase!')
-})
+export const webhook = onRequest(
+  {
+    secrets: ['NOTION_API_KEY'],
+  },
+  async (req, res) => {
+    const server = await createNestServer()
+    return server(req, res)
+  },
+)
+
+createNestServer()

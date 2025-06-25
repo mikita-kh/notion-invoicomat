@@ -1,16 +1,21 @@
 {
   "compilerOptions": {
-    "target": "es2017",
-    "module": "NodeNext",
+    "incremental": true,
+    "target": "es2024",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "module": "nodenext",
     "moduleResolution": "nodenext",
     "strict": true,
+    "strictNullChecks": true,
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "outDir": "lib",
     "sourceMap": true,
-    "esModuleInterop": true
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
   },
-  "compileOnSave": true,
   "include": [
     "src"
   ]

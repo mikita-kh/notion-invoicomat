@@ -1,0 +1,5 @@
+onlyBuiltDependencies:
+  - '@firebase/util'
+  - '@nestjs/core'
+  - protobufjs
+  - unrs-resolver
