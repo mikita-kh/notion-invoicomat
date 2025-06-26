@@ -2,6 +2,7 @@ import { Buffer } from 'node:buffer'
 import { Injectable } from '@nestjs/common'
 import { Environment, FileSystemLoader } from 'nunjucks'
 import { ToWords } from 'to-words'
+import { InvoiceData } from '../types/Invoice'
 import { I18nService } from './i18n.service'
 
 type SupportedCurrency = 'PLN' | 'EUR' | 'USD'
@@ -17,6 +18,7 @@ export class TemplateEngineService {
     this.#environment.addGlobal('_', this.i18n)
     this.#environment.addGlobal('primaryLanguage', 'en')
     this.#environment.addGlobal('secondaryLanguage', 'pl')
+    this.#environment.addGlobal('curency', this.#defaultCurrency)
 
     this.#environment.addFilter('format_number', this.#makeFormatNumberFilter())
     this.#environment.addFilter('format_price', this.#makeFormatPriceFilter())
@@ -35,7 +37,7 @@ export class TemplateEngineService {
   }
 
   #makeFormatPriceFilter() {
-    return (price: number, currency: SupportedCurrency = this.#defaultCurrency) => {
+    return (price: number, currency: SupportedCurrency = this.#environment.getGlobal('currency')) => {
       return Number(price).toLocaleString(this.#defaultLocale, {
         currency,
         style: 'currency',
@@ -109,12 +111,12 @@ export class TemplateEngineService {
       },
     })
 
-    return (price: number, currency: SupportedCurrency = this.#defaultCurrency) => {
+    return (price: number, currency: SupportedCurrency = this.#environment.getGlobal('currency')) => {
       toWords.convert(price, { currencyOptions: currencyOptionsMap[currency] })
     }
   }
 
-  render(data: any): Promise<string> {
+  render(data: InvoiceData): Promise<string> {
     return new Promise((resolve, reject) => {
       this.#environment.render(this.#invoiceTemplate, data, (err, res) => {
         if (err || res === null) {

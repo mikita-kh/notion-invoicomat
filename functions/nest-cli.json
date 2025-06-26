@@ -3,6 +3,16 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src/app",
   "compilerOptions": {
-    "deleteOutDir": true
+    "deleteOutDir": true,
+    "assets": [
+      {
+        "include": "src/app/invoice-renderer/services/locales/*.json",
+        "outDir": "lib/app/invoice-renderer/services/locales"
+      },
+      {
+        "include": "src/app/invoice-renderer/services/templates/*.njk",
+        "outDir": "lib/app/invoice-renderer/services/templates"
+      }
+    ]
   }
 }

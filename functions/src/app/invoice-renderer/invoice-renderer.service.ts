@@ -11,7 +11,6 @@ export class InvoiceRendererService {
   ) {}
 
   async renderInvoice(
-    template: string,
     data: InvoiceData,
   ): Promise<string> {
     // Process the template with Tailwind CSS

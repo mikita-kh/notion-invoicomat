@@ -23,5 +23,8 @@
   "total_due": "Do zapłaty",
   "in_words": "Słownie",
   "seller_signature": "Imię i nazwisko wystawcy",
-  "name_and_surname": "Imię i nazwisko"
+  "name_and_surname": "Imię i nazwisko",
+  "no": "LP",
+  "hours": "godzin",
+  "swift": "SWIFT"
 }

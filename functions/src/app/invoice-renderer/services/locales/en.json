@@ -23,5 +23,8 @@
   "total_due": "Total due",
   "in_words": "In words",
   "seller_signature": "Seller's signature",
-  "name_and_surname": "Name and surname of issuer"
+  "name_and_surname": "Name and surname of issuer",
+  "no": "No.",
+  "hours": "hours",
+  "swift": "SWIFT"
 }
