@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^4.16.1",
+    "@nestjs/cli": "^11.0.7",
     "@slack/types": "^2.14.0",
     "@types/express": "^5.0.3",
     "@types/lodash.once": "^4.1.9",

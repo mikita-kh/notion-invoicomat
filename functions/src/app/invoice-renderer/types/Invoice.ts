@@ -18,6 +18,12 @@ export interface InvoiceData {
   total_pln: number
   cur: string[]
   name: string
+
+  exchangeRate?: {
+    no: string
+    effectiveDate: string
+    mid: number
+  }
 }
 
 export interface Seller {

@@ -6,12 +6,8 @@
     "deleteOutDir": true,
     "assets": [
       {
-        "include": "src/app/invoice-renderer/services/locales/*.json",
-        "outDir": "lib/app/invoice-renderer/services/locales"
-      },
-      {
-        "include": "src/app/invoice-renderer/services/templates/*.njk",
-        "outDir": "lib/app/invoice-renderer/services/templates"
+        "include": "invoice-renderer/**/*.{json,njk}",
+        "outDir": "lib/app"
       }
     ]
   }

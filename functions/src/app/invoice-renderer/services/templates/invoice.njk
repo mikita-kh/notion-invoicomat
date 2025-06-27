@@ -11,7 +11,7 @@
 		</div>
     <div class="flex gap-x-2">
 			<dt>{{ _.t("place_of_issue", primaryLanguage) }}{% if secondaryLanguage %} / {{ _.t("place_of_issue", secondaryLanguage) }}{% endif %}:</dt>
-			<dd>{{seller[0].adress.city}}</dd>
+			<dd>{{seller[0].adress[0].city}}</dd>
 		</div>
 
 		<div class="flex gap-x-2">
@@ -20,10 +20,9 @@
 		</div>
 	</dl>
 	<div class="p-6">
-		<img src="{{seller[0].information.logo[0] | to_base64}}" />
+		<img src="{{seller[0].information[0].logo[0]|to_base64}}" />
 	</div>
 </div>
-
 
 <hr class="my-8" />
 
@@ -32,28 +31,28 @@
 		<h6 class="text-lg font-medium">{{ _.t("seller", primaryLanguage) }}{% if secondaryLanguage %} / {{ _.t("seller", secondaryLanguage) }}{% endif %}:</h6>
 		<dl class="flex flex-col gap-y-1">
 			<div class="flex gap-x-2">
-				<dd>{{seller[0].information.name}}</dd>
+				<dd>{{seller[0].information[0].name}}</dd>
 			</div>
 
 			<div class="flex flex-col">
-				<dt>{{seller[0].adress.street}}</dt>
-				<dd>{{seller[0].adress.postcode}} {{seller[0].adress.city}}</dd>
+				<dt>{{seller[0].adress[0].street}}</dt>
+				<dd>{{seller[0].adress[0].postcode}} {{seller[0].adress[0].city}}</dd>
 			</div>
 
 			<div class="flex gap-x-2">
 				<dt class="whitespace-nowrap">{{ _.t("vat_id", primaryLanguage) }}{% if secondaryLanguage %} / {{ _.t("vat_id", secondaryLanguage) }}{% endif %}</dt>
-				<dd>{{seller[0].information.vat_id}}</dd>
+				<dd>{{seller[0].information[0].vat_id}}</dd>
 			</div>
 
 			<div class="flex flex-col">
-				<dt>{{seller[0].bank.name}}</dt>
+				<dt>{{seller[0].bank[0].name}}</dt>
 				<dd class="flex flex-col">
 					<span>
-						{{seller[0].bank.account}}
+						{{seller[0].bank[0].account}}
 					</span>
-					{% if seller[0].bank.swift != "" %}
+					{% if seller[0].bank[0].swift != "" %}
 					<span class="seller-bank-swift">
-						{{ _.t("swift", primaryLanguage) }}: <span>{{seller[0].bank.swift}}</span>
+						{{ _.t("swift", primaryLanguage) }}: <span>{{seller[0].bank[0].swift}}</span>
 					</span>
 					{% endif %}
 				</dd>
@@ -65,17 +64,17 @@
 		<h6 class="text-lg font-medium">{{ _.t("buyer", primaryLanguage) }}{% if secondaryLanguage %} / {{ _.t("buyer", secondaryLanguage) }}{% endif %}:</h6>
 		<dl class="flex flex-col gap-y-1">
 			<div class="flex gap-x-2">
-				<dd>{{client.name}}</dd>
+				<dd>{{client[0].name}}</dd>
 			</div>
 
 			<div class="flex flex-col">
-				<dt>{{client.street}}</dt>
-				<dd>{{client.postcode}} {{client.city}}, {{client.country}}</dd>
+				<dt>{{client[0].street}}</dt>
+				<dd>{{client[0].postcode}} {{client[0].city}}, {{client[0].country}}</dd>
 			</div>
 
 			<div class="flex gap-x-2">
 				<dt>{{ _.t("vat_id", primaryLanguage) }}</dt>
-				<dd>{{client.tax_identification_number}}</dd>
+				<dd>{{client[0].tax_identification_number}}</dd>
 			</div>
 		</dl>
 	</div>
@@ -122,8 +121,8 @@
 			</td>
 			<td class="text-right">
 				<div class="flex flex-col">
-					<span>{{total_net}}</span>
-					<span>{{total_net}}</span>
+					<span>{{total_net | format_number}}</span>
+					<span>{{total_net | format_number}}</span>
 				</div>
 			</td>
 			<td class="text-right" valign=top>
@@ -131,14 +130,14 @@
 			</td>
 			<td class="text-right">
 				<div class="flex flex-col">
-					<span>{{vat_amount}}</span>
-					<span>{{vat_amount}}</span>
+					<span>{{vat_amount | format_number}}</span>
+					<span>{{vat_amount | format_number}}</span>
 				</div>
 			</td>
 			<td class="text-right">
 				<div class="flex flex-col">
-					<span>{{total_gross}}</span>
-					<span>{{total_gross}}</span>
+					<span>{{total_gross | format_number}}</span>
+					<span>{{total_gross | format_number}}</span>
 				</div>
 			</td>
 		</tr>
@@ -153,25 +152,25 @@
 	</div>
 
 	<div class="flex flex-col text-right font-semibold">
-		<span>{{formatted_total_net}}</span>
-		<span>{{formatted_vat_amount}}</span>
-		<span>{{formatted_total_gross}}</span>
+		<span>{{total_net | format_price(cur[0])}}</span>
+		<span>{{vat_amount | format_price(cur[0])}}</span>
+		<span>{{total_gross | format_price(cur[0])}}</span>
 	</div>
 
 
-	{% if invoice_in_foreign_currency %}
+	{% if exchangeRate.mid != 1 %}
 	<div class="flex flex-col text-right font-semibold">
-		<span>{{total_net_in_pln}}</span>
-		<span>{{vat_amount_in_pln}}</span>
-		<span>{{total_gross_in_pln}}</span>
+		<span>{{total_net * exchangeRate.mid | format_price('PLN')}}</span>
+		<span>{{vat_amount_in * exchangeRate.mid | format_price('PLN')}}</span>
+		<span>{{total_gross * exchangeRate.mid | format_price('PLN')}}</span>
 	</div>
 	{% endif %}
 </div>
-{% if invoice_in_foreign_currency %}
+{% if exchangeRate.mid != 1 %}
 <hr class="my-8" />
 <div>
-	{{ _.t("exchange_rate_label", primaryLanguage) | replace("{currency}", currency) | replace("{rate}", rate.mid) | replace("{no}", rate.no) | replace("{date}", rate.effectiveDate) }}{% if secondaryLanguage %}&nbsp;/
-	{{ _.t("exchange_rate_label", secondaryLanguage) | replace("{currency}", currency) | replace("{rate}", rate.mid) | replace("{no}", rate.no) | replace("{date}", rate.effectiveDate) }}{% endif %}
+	{{ _.t("exchange_rate_label", primaryLanguage, currency=cur[0], rate=exchangeRate.mid, no=exchangeRate.no, date=exchangeRate.effectiveDate) }}{% if secondaryLanguage %}&nbsp;/
+	{{ _.t("exchange_rate_label", secondaryLanguage, currency=cur[0], rate=exchangeRate.mid, no=exchangeRate.no, date=exchangeRate.effectiveDate) }}{% endif %}
 
 	<div class="text-xl leading-relaxed">
 		{{ _.t("exchanged_vat", primaryLanguage) }}{% if secondaryLanguage %} / {{ _.t("exchanged_vat", secondaryLanguage) }}{% endif %}: <span class="font-semibold">{{vat_amount_in_pln}}</span>
@@ -184,16 +183,16 @@
 <div>
 	<span>{{ _.t("total_due", primaryLanguage) }}{% if secondaryLanguage %} / {{ _.t("total_due", secondaryLanguage) }}{% endif %}:</span>
 	<span class="text-2xl font-semibold whitespace-nowrap">{{formatted_total_gross}}</span>
-	({{ _.t("in_words", primaryLanguage) }}{% if secondaryLanguage %} / {{ _.t("in_words", secondaryLanguage) }}{% endif %}: <span class="italic">{{ total_gross_in_words }}</span>)
+	({{ _.t("in_words", primaryLanguage) }}{% if secondaryLanguage %} / {{ _.t("in_words", secondaryLanguage) }}{% endif %}: <span class="italic">{{ total_gross | to_words(cur[0]) }}</span>)
 </div>
 
 <hr class="my-8" />
 
 <div class="grid grid-cols-2 gap-x-8 items-center">
 
-	<img class="h-[128px]" src="{{seller[0].information.signature[0]|to_base64}}" />
+	<img class="h-[128px]" src="{{seller[0].information[0].signature[0]|to_base64}}" />
 
 	<div class="text-center">{{ _.t("seller_signature", primaryLanguage) }}{% if secondaryLanguage %} / {{ _.t("seller_signature", secondaryLanguage) }}{% endif %}
-		<div class="font-semibold text-xl leading-relaxed">{{seller[0].information.name}}</div>
+		<div class="font-semibold text-xl leading-relaxed">{{seller[0].information[0].name}}</div>
 	</div>
 </div>
