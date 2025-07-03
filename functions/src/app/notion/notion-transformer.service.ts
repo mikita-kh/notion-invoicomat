@@ -15,7 +15,7 @@ type HandlerMap = {
 export class NotionTransformerService {
   shouldIgnore = (_propertyName: string) => false
 
-  transform(page: Pick<PageObjectResponse, 'id' | 'properties'>) {
+  transform<T extends Record<string, any> = Record<string, any>>(page: Pick<PageObjectResponse, 'id' | 'properties'>): T {
     return Object.fromEntries(
       Object.entries(page.properties)
         .filter(([name]) => !this.shouldIgnore(name))
@@ -23,7 +23,7 @@ export class NotionTransformerService {
           name.toLowerCase().replace(/\W+/g, '_'),
           this.transformPropertyValue(value),
         ]),
-    )
+    ) as T
   }
 
   #handlers: HandlerMap = {

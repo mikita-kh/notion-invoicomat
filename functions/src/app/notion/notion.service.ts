@@ -1,16 +1,20 @@
-import { Injectable } from '@nestjs/common'
+import { CACHE_MANAGER } from '@nestjs/cache-manager'
+import { Inject, Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Client as NotionClient, PageObjectResponse } from '@notionhq/client'
+import { Cache } from 'cache-manager'
+import { InvoiceData } from '../invoice-renderer/types/Invoice'
 import { NotionTransformerService } from './notion-transformer.service'
 
 @Injectable()
 export class NotionService {
   #client: NotionClient
-  #cache = new Map()
+  #logger = new Logger(NotionService.name)
 
   constructor(
     private readonly configService: ConfigService,
     private readonly notionTransformerService: NotionTransformerService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {
     this.#client = new NotionClient({
       auth: this.configService.get<string>('NOTION_API_KEY'),
@@ -18,24 +22,35 @@ export class NotionService {
   }
 
   async getNormilizedPageData(id: string) {
-    this.#cache.clear()
+    let result = await this.cacheManager.get<InvoiceData>(id)
 
-    const { properties } = await this.#retrievePageWithResolvedRelations({ id })
+    if (!result) {
+      const { properties } = await this.#retrievePageWithResolvedRelations(id)
 
-    return this.notionTransformerService.transform({
-      id,
-      properties,
-    })
+      result = this.notionTransformerService.transform<InvoiceData>({
+        id,
+        properties,
+      })
+
+      await this.cacheManager.set(id, result, 3.6e6) // Cache for 1 hour
+    }
+
+    return result
   }
 
-  async #retrievePageWithResolvedRelations({ id }: { id: string }) {
+  async #retrievePageWithResolvedRelations(id: string, cache = new Map<string, Pick<PageObjectResponse, 'id' | 'properties'>>()) {
     const properties: PageObjectResponse['properties'] = {}
 
-    if (this.#cache.has(id)) {
+    if (typeof id !== 'string') {
+      this.#logger.warn(`Invalid page ID: ${id}`)
       return { properties, id }
     }
 
-    this.#cache.set(id, true)
+    if (cache.has(id)) {
+      return cache.get(id)!
+    }
+
+    cache.set(id, { properties, id })
 
     const page = await this.#client.pages
       .retrieve({ page_id: id })
@@ -46,7 +61,9 @@ export class NotionService {
           properties[propertyName] = {
             ...propertyValue,
             relation: await Promise.all(
-              propertyValue.relation.map(relationItem => this.#retrievePageWithResolvedRelations({ id: relationItem.id })),
+              propertyValue.relation
+                .filter(relationItem => Boolean(relationItem.id))
+                .map(relationItem => this.#retrievePageWithResolvedRelations(relationItem.id)),
             ),
           }
         } else {
