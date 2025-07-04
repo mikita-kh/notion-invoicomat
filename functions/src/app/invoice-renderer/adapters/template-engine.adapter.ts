@@ -1,17 +1,20 @@
 import { Buffer } from 'node:buffer'
-import { join } from 'node:path'
-import { Injectable } from '@nestjs/common'
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
 import { Environment, FileSystemLoader } from 'nunjucks'
+import postcss from 'postcss'
+import tailwindcss, { Config } from 'tailwindcss'
+import defaultTheme from 'tailwindcss/defaultTheme'
+
 import { ToWords } from 'to-words'
 import { I18nService } from '../../i18n/i18n.service'
+import { ExchangeService } from '../services/exchange.service'
 import { InvoiceData } from '../types/Invoice'
-import { ExchangeService } from './exchange.service'
 
 type SupportedCurrency = 'PLN' | 'EUR' | 'USD'
 
-@Injectable()
-export class TemplateEngineService {
-  #environment = new Environment(new FileSystemLoader(join(__dirname, `templates`), { watch: false }))
+export class TemplateEngineAdapter {
+  #environment = new Environment(new FileSystemLoader(path.join(__dirname, `templates`), { watch: false }))
   #defaultLocale = 'pl-PL'
   #primaryLanguage = 'en'
   #secondaryLanguage = 'pl'
@@ -63,7 +66,7 @@ export class TemplateEngineService {
   }
 
   #translate(key: string, lang = this.#primaryLanguage, args: Record<string, any>) {
-    return this.i18n.t(`${this.#ns}.${key}`, { lang, args })
+    return this.i18n.t(key, { lang, args, ns: this.#ns })
   }
 
   #makeToBase64Filter() {
@@ -131,11 +134,11 @@ export class TemplateEngineService {
 
   async render(data: InvoiceData): Promise<string> {
     const [{ currency }] = data.entries
-    const invoiceInForeignCurrency = data.cur[0] !== this.#defaultCurrency
+    const invoiceInForeignCurrency = currency !== this.#defaultCurrency
     let rate = { mid: 1 }
 
     if (invoiceInForeignCurrency) {
-      ({ rates: [rate] } = (await this.exchange.getRate(data.cur[0], data.sale_date ?? data.issue_date)))
+      ({ rates: [rate] } = (await this.exchange.getRate(currency, data.sale_date ?? data.issue_date)))
     }
 
     const context = {
@@ -145,6 +148,26 @@ export class TemplateEngineService {
       rate,
     }
 
+    const htmlContent = await this.#renderTemplate(context)
+    const [fontFamilyName, cssWithInlinedFonts] = await this.#loadAndInlineFonts()
+    const css = await this.#compileOptimizedCss(htmlContent, fontFamilyName)
+
+    return `<!DOCTYPE html>
+            <html lang="en">
+              <head>
+                  <meta charset="UTF-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <title>Invoice</title>
+                  <style>${cssWithInlinedFonts}</style>
+                  <style>${css}</style>
+              </head>
+              <body>
+                  ${htmlContent}
+              </body>
+            </html>`
+  }
+
+  async #renderTemplate(context: Record<string, any>): Promise<string> {
     return new Promise((resolve, reject) => {
       this.#environment.render(this.#invoiceTemplate, context, (err, res) => {
         if (err || res === null) {
@@ -154,5 +177,51 @@ export class TemplateEngineService {
         }
       })
     })
+  }
+
+  async #compileOptimizedCss(htmlContent: string, fontFamilyName: string): Promise<string> {
+    const inputCss = `
+      @tailwind base;
+      @tailwind components;
+      @tailwind utilities;
+    `
+
+    const config: Config = {
+      content: [{ raw: htmlContent, extension: 'html' }],
+      theme: {
+        extend: {
+          fontFamily: {
+            ...defaultTheme.fontFamily,
+            sans: [fontFamilyName, ...defaultTheme.fontFamily.sans],
+          },
+        },
+      },
+    }
+
+    const processor = postcss([
+      tailwindcss(config),
+    ])
+
+    const { css } = await processor.process(inputCss, { from: undefined })
+
+    return css
+  }
+
+  async #loadAndInlineFonts() {
+    const cssPath = require.resolve('@fontsource-variable/inter')
+    const cssWithFonts = await readFile(cssPath, 'utf-8')
+    const fontFamilyName = cssWithFonts.match(/font-family:\s*['"]([^'"]+)['"]/)![1]!
+
+    return [fontFamilyName, (await Promise.all(
+      cssWithFonts.split(/(url\([^)]+\))/).map(async (part) => {
+        if (part.startsWith('url(')) {
+          const relativePath = part.slice(4, -1).replace(/['"]/g, '')
+          const fontFilePath = path.resolve(path.dirname(cssPath), relativePath)
+
+          return `url('data:font/${path.extname(fontFilePath).slice(1)};base64,${(await readFile(fontFilePath)).toString('base64')}')`
+        }
+        return part
+      }),
+    )).join('')]
   }
 }

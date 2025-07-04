@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common'
+import { I18nModule } from '../i18n/i18n.module'
 import { InvoiceRendererService } from './invoice-renderer.service'
 import { ExchangeService } from './services/exchange.service'
-import { TemplateEngineService } from './services/template-engine.service'
 
 @Module({
-  providers: [InvoiceRendererService, TemplateEngineService, ExchangeService],
+  imports: [I18nModule],
+  providers: [InvoiceRendererService, ExchangeService],
   exports: [InvoiceRendererService, ExchangeService],
 })
 export class InvoiceRendererModule {}

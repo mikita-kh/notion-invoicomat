@@ -182,7 +182,7 @@
 
 <div>
 	<span>{{ _("Total due", primaryLanguage) }}{% if secondaryLanguage %} / {{ _("Total due", secondaryLanguage) }}{% endif %}:</span>
-	<span class="text-2xl font-semibold whitespace-nowrap">{{formatted_total_gross}}</span>
+	<span class="text-2xl font-semibold whitespace-nowrap">{{total_gross | format_price(currency)}}</span>
 	({{ _("In words", primaryLanguage) }}{% if secondaryLanguage %} / {{ _("In words", secondaryLanguage) }}{% endif %}: <span class="italic">{{ total_gross | to_words(currency) }}</span>)
 </div>
 
