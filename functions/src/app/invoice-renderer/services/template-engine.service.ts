@@ -3,9 +3,9 @@ import { join } from 'node:path'
 import { Injectable } from '@nestjs/common'
 import { Environment, FileSystemLoader } from 'nunjucks'
 import { ToWords } from 'to-words'
+import { I18nService } from '../../i18n/i18n.service'
 import { InvoiceData } from '../types/Invoice'
 import { ExchangeService } from './exchange.service'
-import { I18nService } from './i18n.service'
 
 type SupportedCurrency = 'PLN' | 'EUR' | 'USD'
 
@@ -17,9 +17,10 @@ export class TemplateEngineService {
   #secondaryLanguage = 'pl'
   #defaultCurrency: SupportedCurrency = 'PLN'
   #invoiceTemplate = 'invoice.njk'
+  #ns = 'invoice'
 
   constructor(private readonly i18n: I18nService, private readonly exchange: ExchangeService) {
-    this.#environment.addGlobal('_', this.i18n)
+    this.#environment.addGlobal('_', this.#translate.bind(this))
     this.#environment.addGlobal('defaultCurrency', this.#defaultCurrency)
     this.#environment.addGlobal('primaryLanguage', this.#primaryLanguage)
     this.#environment.addGlobal('secondaryLanguage', this.#secondaryLanguage)
@@ -58,7 +59,11 @@ export class TemplateEngineService {
   }
 
   #makeI18nFilter() {
-    return (key: string, lang = 'en', vars: Record<string, any>) => this.i18n.t(key, lang, vars)
+    return this.#translate.bind(this)
+  }
+
+  #translate(key: string, lang = this.#primaryLanguage, args: Record<string, any>) {
+    return this.i18n.t(`${this.#ns}.${key}`, { lang, args })
   }
 
   #makeToBase64Filter() {
@@ -125,9 +130,19 @@ export class TemplateEngineService {
   }
 
   async render(data: InvoiceData): Promise<string> {
-    const context: InvoiceData = { ...data }
-    if (data.cur[0] !== this.#defaultCurrency) {
-      context.exchangeRate = (await this.exchange.getRate(data.cur[0], data.sale_date ?? data.issue_date)).rates[0]
+    const [{ currency }] = data.entries
+    const invoiceInForeignCurrency = data.cur[0] !== this.#defaultCurrency
+    let rate = { mid: 1 }
+
+    if (invoiceInForeignCurrency) {
+      ({ rates: [rate] } = (await this.exchange.getRate(data.cur[0], data.sale_date ?? data.issue_date)))
+    }
+
+    const context = {
+      ...data,
+      invoice_in_foreign_currency: invoiceInForeignCurrency,
+      currency,
+      rate,
     }
 
     return new Promise((resolve, reject) => {

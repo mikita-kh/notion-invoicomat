@@ -6,7 +6,11 @@
     "deleteOutDir": true,
     "assets": [
       {
-        "include": "invoice-renderer/**/*.{json,njk}",
+        "include": "invoice-renderer/**/*.njk",
+        "outDir": "lib/app"
+      },
+      {
+        "include": "i18n/locales",
         "outDir": "lib/app"
       }
     ]

@@ -38,7 +38,7 @@ export class NotionService {
     return result
   }
 
-  async #retrievePageWithResolvedRelations(id: string, cache = new Map<string, Pick<PageObjectResponse, 'id' | 'properties'>>()) {
+  async #retrievePageWithResolvedRelations(id: string, visited = new Map<string, true>()) {
     const properties: PageObjectResponse['properties'] = {}
 
     if (typeof id !== 'string') {
@@ -46,11 +46,11 @@ export class NotionService {
       return { properties, id }
     }
 
-    if (cache.has(id)) {
-      return cache.get(id)!
+    if (visited.has(id)) {
+      return { properties, id }
     }
 
-    cache.set(id, { properties, id })
+    visited.set(id, true)
 
     const page = await this.#client.pages
       .retrieve({ page_id: id })
@@ -63,7 +63,7 @@ export class NotionService {
             relation: await Promise.all(
               propertyValue.relation
                 .filter(relationItem => Boolean(relationItem.id))
-                .map(relationItem => this.#retrievePageWithResolvedRelations(relationItem.id)),
+                .map(relationItem => this.#retrievePageWithResolvedRelations(relationItem.id, visited)),
             ),
           }
         } else {

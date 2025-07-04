@@ -6,6 +6,7 @@
     "experimentalDecorators": true,
     "module": "nodenext",
     "moduleResolution": "nodenext",
+    "resolveJsonModule": true,
     "strict": true,
     "strictNullChecks": true,
     "noImplicitReturns": true,
