@@ -1,9 +1,8 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
-import { Inject, Injectable, Logger } from '@nestjs/common'
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Client as NotionClient, PageObjectResponse } from '@notionhq/client'
 import { Cache } from 'cache-manager'
-import { InvoiceData } from '../invoice-renderer/types/Invoice'
 import { NotionTransformerService } from './notion-transformer.service'
 
 @Injectable()
@@ -14,7 +13,7 @@ export class NotionService {
   constructor(
     private readonly configService: ConfigService,
     private readonly notionTransformerService: NotionTransformerService,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    @Optional() @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {
     this.#client = new NotionClient({
       auth: this.configService.get<string>('NOTION_API_KEY'),
@@ -22,17 +21,19 @@ export class NotionService {
   }
 
   async getNormilizedPageData(id: string) {
-    let result = await this.cacheManager.get<InvoiceData>(id)
+    let result = this.cacheManager ? await this.cacheManager.get<Record<string, any>>(id) : null
 
     if (!result) {
       const { properties } = await this.#retrievePageWithResolvedRelations(id)
 
-      result = this.notionTransformerService.transform<InvoiceData>({
+      result = this.notionTransformerService.transform({
         id,
         properties,
       })
 
-      await this.cacheManager.set(id, result, 3.6e6) // Cache for 1 hour
+      if (this.cacheManager) {
+        await this.cacheManager.set(id, result)
+      }
     }
 
     return result

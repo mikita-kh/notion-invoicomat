@@ -160,20 +160,20 @@
 
 	{% if invoice_in_foreign_currency %}
 	<div class="flex flex-col text-right font-semibold">
-		<span>{{total_net * rate.mid | format_price('PLN')}}</span>
-		<span>{{vat_amount * rate.mid | format_price('PLN')}}</span>
-		<span>{{total_gross * rate.mid | format_price('PLN')}}</span>
+		<span>{{ (total_net * exchange.rate) | format_price(defaultCurrency)}}</span>
+		<span>{{ (vat_amount * exchange.rate) | format_price(defaultCurrency)}}</span>
+		<span>{{ (total_gross * exchange.rate) | format_price(defaultCurrency)}}</span>
 	</div>
 	{% endif %}
 </div>
 {% if invoice_in_foreign_currency %}
 <hr class="my-8" />
 <div>
-	{{ _("Rate of exchange PLN/{currency} {rate}, NBP foreign exchange reference rates no {no} at {date}", primaryLanguage, currency=currency, rate=rate.mid, no=rate.no, date=rate.effectiveDate) }}{% if secondaryLanguage %}&nbsp;/
-	{{ _("Rate of exchange PLN/{currency} {rate}, NBP foreign exchange reference rates no {no} at {date}", secondaryLanguage, currency=currency, rate=rate.mid, no=rate.no, date=rate.effectiveDate) }}{% endif %}
+	{{ _("Rate of exchange PLN/{currency} {rate}, NBP foreign exchange reference rates no {no} at {date}", primaryLanguage, exchange) }}{% if secondaryLanguage %}&nbsp;/
+	{{ _("Rate of exchange PLN/{currency} {rate}, NBP foreign exchange reference rates no {no} at {date}", secondaryLanguage, exchange) }}{% endif %}
 
 	<div class="text-xl leading-relaxed">
-		{{ _("Exchanged tax amount", primaryLanguage) }}{% if secondaryLanguage %} / {{ _("Exchanged tax amount", secondaryLanguage) }}{% endif %}: <span class="font-semibold">{{vat_amount_in_pln}}</span>
+		{{ _("Exchanged tax amount", primaryLanguage) }}{% if secondaryLanguage %} / {{ _("Exchanged tax amount", secondaryLanguage) }}{% endif %}: <span class="font-semibold">{{ (vat_amount * exchange.rate) | format_price(defaultCurrency)}}</span>
 	</div>
 </div>
 {% endif %}

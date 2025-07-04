@@ -1,11 +1,19 @@
 import { Module } from '@nestjs/common'
+import { ExchangeModule } from '../exchange/exchange.module'
 import { I18nModule } from '../i18n/i18n.module'
+import { NunjucksTemplateEngineAdapter } from './adapters/nunjucks-template-engine.adapter'
+import { TemplateEngineAdapter } from './adapters/template-engine.adapter'
 import { InvoiceRendererService } from './invoice-renderer.service'
-import { ExchangeService } from './services/exchange.service'
 
 @Module({
-  imports: [I18nModule],
-  providers: [InvoiceRendererService, ExchangeService],
-  exports: [InvoiceRendererService, ExchangeService],
+  imports: [ExchangeModule, I18nModule],
+  providers: [
+    {
+      provide: TemplateEngineAdapter,
+      useClass: NunjucksTemplateEngineAdapter,
+    },
+    InvoiceRendererService,
+  ],
+  exports: [InvoiceRendererService],
 })
 export class InvoiceRendererModule {}
