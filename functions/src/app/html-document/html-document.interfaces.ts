@@ -16,13 +16,3 @@ export interface HtmlDocumentModuleOptions {
     }
   }
 }
-
-export interface HtmlDocumentModuleAsyncOptions {
-  imports?: any[]
-  inject?: any[]
-  useFactory?: (...args: any[]) => HtmlDocumentModuleOptions | Promise<HtmlDocumentModuleOptions>
-  useClass?: any
-  useExisting?: any
-}
-
-export const HTML_DOCUMENT_MODULE_OPTIONS = Symbol('HTML_DOCUMENT_MODULE_OPTIONS')

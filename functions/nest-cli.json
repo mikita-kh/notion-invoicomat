@@ -4,7 +4,7 @@
   "sourceRoot": "src/app",
   "compilerOptions": {
     "deleteOutDir": true,
-    
+
     "assets": [
       {
         "include": "/html-document/**/*.njk",
