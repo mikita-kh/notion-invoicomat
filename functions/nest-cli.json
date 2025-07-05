@@ -4,9 +4,10 @@
   "sourceRoot": "src/app",
   "compilerOptions": {
     "deleteOutDir": true,
+    
     "assets": [
       {
-        "include": "invoice-renderer/**/*.njk",
+        "include": "/html-document/**/*.njk",
         "outDir": "lib/app"
       },
       {
