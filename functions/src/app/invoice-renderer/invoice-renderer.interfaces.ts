@@ -18,12 +18,6 @@ export interface InvoiceData {
   total_pln: number
   cur: string[]
   name: string
-
-  exchangeRate?: {
-    no: string
-    effectiveDate: string
-    mid: number
-  }
 }
 
 export interface Seller {
@@ -80,4 +74,15 @@ export interface Client {
   state: string
   postcode: string
   id: string
+}
+
+export interface InvoiceRendererContext extends InvoiceData {
+  invoice_in_foreign_currency: boolean
+  currency: string
+  exchange: {
+    rate: number
+    currency: string
+    no: string
+    date: string
+  }
 }

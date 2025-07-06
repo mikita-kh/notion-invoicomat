@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ExchangeService } from '../exchange/exchange.service'
 import { HtmlDocumentService } from '../html-document/html-document.service'
-import { InvoiceData } from './invoice-renderer.interfaces'
+import { InvoiceData, InvoiceRendererContext } from './invoice-renderer.interfaces'
 
 @Injectable()
 export class InvoiceRendererService {
@@ -26,7 +26,7 @@ export class InvoiceRendererService {
 
   async prepapeInvoiceData(
     data: InvoiceData,
-  ): Promise<InvoiceData> {
+  ): Promise<InvoiceRendererContext> {
     const [{ currency }] = data.entries
     const invoiceInForeignCurrency = currency !== this.#defaultCurrency
     let exchange = { rate: 1, currency, no: '', date: '' }
@@ -35,7 +35,7 @@ export class InvoiceRendererService {
       exchange = await this.exchange.getRate(currency, data.sale_date ?? data.issue_date)
     }
 
-    const context = {
+    const context: InvoiceRendererContext = {
       ...data,
       invoice_in_foreign_currency: invoiceInForeignCurrency,
       currency,

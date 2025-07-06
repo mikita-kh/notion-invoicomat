@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { IntlMessageFormat } from 'intl-messageformat'
-import { I18nFileLoader } from './loaders/i18n.file-loader'
-import { I18nTranslation } from './loaders/i18n.loader'
+
+import { I18nLocalesLoader, I18nTranslation } from './i18n.locales-loader'
 
 @Injectable()
 export class I18nService {
@@ -13,7 +13,7 @@ export class I18nService {
 
   private translations = new Map<string, I18nTranslation[string]>()
 
-  constructor(private readonly loader: I18nFileLoader) {}
+  private readonly loader = new I18nLocalesLoader()
 
   async loadTranslations() {
     try {
@@ -22,7 +22,7 @@ export class I18nService {
       const translations = await this.loader.translations()
 
       for (const [lang, data] of Object.entries(translations)) {
-        this.translations.set(lang, data)
+        this.translations.set(lang, data as I18nTranslation[string])
       }
     } catch (error) {
       this.#logger.error('Failed to load translations:', error)
