@@ -7,7 +7,7 @@
 
     "assets": [
       {
-        "include": "/html-document/**/*.njk",
+        "include": "**/*.njk",
         "outDir": "lib/app"
       },
       {

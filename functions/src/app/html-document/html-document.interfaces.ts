@@ -1,9 +1,9 @@
-import { TemplateEngineAdapterOptions } from './template-engine/template-engine.adapter'
+import { NunjucksTemplateEngineAdapterOptions } from './template-engine/nunjucks/nunjucks-template-engine.adapter'
 
 export interface HtmlDocumentModuleOptions {
   templateEngine: {
     type: 'nunjucks'
-    config: TemplateEngineAdapterOptions
+    config: NunjucksTemplateEngineAdapterOptions
   }
   cssCompiler: {
     type: 'tailwind'

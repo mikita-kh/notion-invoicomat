@@ -1,5 +1,4 @@
 import { Buffer } from 'node:buffer'
-import path from 'node:path'
 
 import { Injectable } from '@nestjs/common'
 import { Environment, FileSystemLoader } from 'nunjucks'
@@ -8,19 +7,39 @@ import { ToWords } from 'to-words'
 import { I18nService } from '../../../i18n/i18n.service'
 import { TemplateEngineAdapter, TemplateEngineAdapterOptions } from '../template-engine.adapter'
 
+export interface NunjucksTemplateEngineAdapterOptions extends TemplateEngineAdapterOptions {
+  nunjucks: {
+    /**
+     * The path to the directory containing Nunjucks templates.
+     * Defaults to the `templates` directory in the current module.
+     */
+    templatesPath: string
+    noCache?: boolean
+  }
+}
+
 @Injectable()
 export class NunjucksTemplateEngineAdapter extends TemplateEngineAdapter {
-  #environment = new Environment(new FileSystemLoader(path.join(__dirname, `templates`), { watch: false, noCache: true }))
+  #environment: Environment
 
-  constructor(protected readonly i18n: I18nService, options: TemplateEngineAdapterOptions) {
+  constructor(protected readonly i18n: I18nService, protected readonly options: NunjucksTemplateEngineAdapterOptions) {
     super(i18n, options)
 
+    this.#environment = new Environment(new FileSystemLoader(this.options.nunjucks.templatesPath, { watch: false, noCache: true }))
+
+    this.#registerGlobals()
+    this.#registerFilters()
+  }
+
+  #registerGlobals() {
     this.#environment.addGlobal('_', this.#translate.bind(this))
     this.#environment.addGlobal('currency', this.currency)
     this.#environment.addGlobal('locale', this.localeCode)
     this.#environment.addGlobal('primaryLanguage', this.primaryLanguage)
     this.#environment.addGlobal('secondaryLanguage', this.secondaryLanguage)
+  }
 
+  #registerFilters() {
     this.#environment.addFilter('format_number', this.#makeFormatNumberFilter())
     this.#environment.addFilter('format_price', this.#makeFormatPriceFilter())
     this.#environment.addFilter('to_words', this.#makeToWordsFilter())
