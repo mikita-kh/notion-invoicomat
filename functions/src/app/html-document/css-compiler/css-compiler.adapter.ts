@@ -4,6 +4,11 @@ export interface CssCompilerResult {
   warnings?: string[]
 }
 
-export abstract class CssCompilerAdapter<AdapterOptions = Record<string, any>> {
-  abstract compile(options?: AdapterOptions): Promise<CssCompilerResult>
+export interface CompilerOptions {
+  fontFamily?: string
+  htmlContent: string
+}
+
+export abstract class CssCompilerAdapter {
+  abstract compile(options?: CompilerOptions): Promise<CssCompilerResult>
 }

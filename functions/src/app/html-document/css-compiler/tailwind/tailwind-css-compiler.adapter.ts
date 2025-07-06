@@ -2,12 +2,7 @@ import { Injectable } from '@nestjs/common'
 import postcss from 'postcss'
 import tailwindcss, { Config } from 'tailwindcss'
 import defaultTheme from 'tailwindcss/defaultTheme'
-import { CssCompilerAdapter, CssCompilerResult } from '../css-compiler.adapter'
-
-export interface TailwindCompilerOptions {
-  fontFamily?: string
-  htmlContent: string
-}
+import { CompilerOptions, CssCompilerAdapter, CssCompilerResult } from '../css-compiler.adapter'
 
 @Injectable()
 export class TailwindCssCompiler extends CssCompilerAdapter {
@@ -17,7 +12,7 @@ export class TailwindCssCompiler extends CssCompilerAdapter {
     @tailwind utilities;
   `
 
-  async compile(options: TailwindCompilerOptions): Promise<CssCompilerResult> {
+  async compile(options: CompilerOptions): Promise<CssCompilerResult> {
     const config = this.buildTailwindConfig(options)
 
     try {
@@ -34,11 +29,11 @@ export class TailwindCssCompiler extends CssCompilerAdapter {
     }
   }
 
-  private buildTailwindConfig(options: TailwindCompilerOptions): Config {
+  private buildTailwindConfig(options: CompilerOptions): Config {
     const baseConfig: Config = {
       content: [{ raw: options.htmlContent, extension: 'html' }],
       theme: {
-        extend: this.buildFontConfig(options.fontFamily),
+        extend: this.buildThemeConfig(options.fontFamily),
       },
       plugins: [],
     }
@@ -46,14 +41,13 @@ export class TailwindCssCompiler extends CssCompilerAdapter {
     return baseConfig
   }
 
-  private buildFontConfig(fontFamily?: string): Partial<Config['theme']> {
+  private buildThemeConfig(fontFamily?: string): Partial<Config['theme']> {
     if (!fontFamily) {
       return {}
     }
 
     return {
       fontFamily: {
-        ...defaultTheme.fontFamily,
         sans: [fontFamily, ...defaultTheme.fontFamily.sans],
       },
     }
