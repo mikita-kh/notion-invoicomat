@@ -11,7 +11,7 @@ export class HtmlDocumentService {
     private readonly cssCompiler: CssCompilerAdapter,
   ) {}
 
-  async render(template: string, context: Record<string, any>): Promise<string> {
+  async render(template: string, context: Record<string, any>) {
     const htmlContent = await this.templateEngine.render(template, context)
     const [fontFamily] = await this.fontInliner.fontFamily()
     const [cssWithInlinedFonts] = await this.fontInliner.inline()

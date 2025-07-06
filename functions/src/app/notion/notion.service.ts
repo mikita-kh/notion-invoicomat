@@ -21,7 +21,7 @@ export class NotionService {
   }
 
   async getNormilizedPageData(id: string) {
-    let result = this.cacheManager ? await this.cacheManager.get<Record<string, any>>(id) : null
+    let result = await this.cacheManager?.get<Record<string, any>>(id)
 
     if (!result) {
       const { properties } = await this.#retrievePageWithResolvedRelations(id)
@@ -31,9 +31,7 @@ export class NotionService {
         properties,
       })
 
-      if (this.cacheManager) {
-        await this.cacheManager.set(id, result)
-      }
+      await this.cacheManager?.set(id, result)
     }
 
     return result
@@ -74,5 +72,26 @@ export class NotionService {
     }
 
     return { id, properties }
+  }
+
+  async updatePageProperty(pageId: string, propertyName: string, propertyValue: any): Promise<void> {
+    try {
+      this.#logger.debug(`Updating page ${pageId} property ${propertyName}`)
+
+      await this.#client.pages.update({
+        page_id: pageId,
+        properties: {
+          [propertyName]: propertyValue,
+        },
+      })
+
+      // Очищаем кэш для этой страницы
+      await this.cacheManager?.del(pageId)
+
+      this.#logger.log(`Page property updated successfully: ${pageId}.${propertyName}`)
+    } catch (error) {
+      this.#logger.error(`Error updating page property: ${pageId}.${propertyName}`, error)
+      throw error
+    }
   }
 }

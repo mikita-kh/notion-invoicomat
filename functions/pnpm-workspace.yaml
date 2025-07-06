@@ -2,4 +2,5 @@ onlyBuiltDependencies:
   - '@firebase/util'
   - '@nestjs/core'
   - protobufjs
+  - puppeteer
   - unrs-resolver

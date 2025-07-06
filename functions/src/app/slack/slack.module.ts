@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common'
-import { NotionModule } from '../notion/notion.module'
+import { InvoiceProcessorModule } from '../invoice-processor/invoice-processor.module'
 import { SlackController } from './slack.controller'
 import { SlackService } from './slack.service'
 
 @Module({
-  imports: [NotionModule],
+  imports: [InvoiceProcessorModule],
   controllers: [SlackController],
   providers: [SlackService],
 })

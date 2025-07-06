@@ -9,6 +9,7 @@ import { I18nModule } from './i18n/i18n.module'
 import { InvoiceRendererModule } from './invoice-renderer/invoice-renderer.module'
 import { NotionModule } from './notion/notion.module'
 import { SlackModule } from './slack/slack.module'
+import { InvoiceProcessorModule } from './invoice-processor/invoice-processor.module';
 
 const isDevOrEmulator = process.env.NODE_ENV === 'development' || process.env.FUNCTIONS_EMULATOR === 'true'
 
@@ -22,6 +23,7 @@ const isDevOrEmulator = process.env.NODE_ENV === 'development' || process.env.FU
     SlackModule,
     NotionModule,
     InvoiceRendererModule,
+    InvoiceProcessorModule,
   ],
   controllers: [AppController],
   providers: [],

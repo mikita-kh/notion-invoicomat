@@ -1,36 +1,44 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { SlackEvent } from '@slack/types'
 import { parsePageId } from 'notion-utils'
-import { NotionService } from '../notion/notion.service'
+import { InvoiceProcessorService } from '../invoice-processor/invoice-processor.service'
 
 @Injectable()
 export class SlackService {
   logger = new Logger(SlackService.name)
 
-  constructor(private readonly notionService: NotionService) {}
+  constructor(
+    private readonly invoiceProcessor: InvoiceProcessorService,
+  ) {}
 
-  async handleEvent(data: SlackEvent) {
-    let notionPageId: string | undefined
-
-    if (data.type === 'message' && 'blocks' in data && Array.isArray(data.blocks)) {
-      const sections = data.blocks.filter(this.#isMarkdownSectionBlock, this)
-
-      for (const section of sections) {
-        notionPageId = parsePageId(section.text.text)
-
-        if (notionPageId) {
-          break
-        }
-      }
-    }
+  async handleEvent(slackEvent: SlackEvent) {
+    const notionPageId = this.extractPageIdFromSlackEvent(slackEvent)
 
     if (notionPageId) {
-      await this.notionService.getNormilizedPageData(notionPageId)
+      try {
+        const result = await this.invoiceProcessor.process(notionPageId)
+        this.logger.log('Invoice processing completed', result)
+      } catch (error) {
+        this.logger.error(`Failed to process invoice for page: ${notionPageId}`, error)
+        throw error
+      }
     }
   }
 
-  #isMarkdownSectionBlock(block: any): block is { type: 'section', text: { type: 'mrkdwn', text: string } } {
-    return block && block.type === 'section' && 'text' in block && block.text?.type === 'mrkdwn' && typeof block.text.text === 'string'
+  private extractPageIdFromSlackEvent(slackEvent: SlackEvent): string | undefined {
+    if (slackEvent.type === 'message' && 'blocks' in slackEvent && Array.isArray(slackEvent.blocks)) {
+      for (const block of slackEvent.blocks) {
+        if (block && block.type === 'section' && 'text' in block && block.text?.type === 'mrkdwn' && typeof block.text.text === 'string') {
+          const pageId = parsePageId(block.text.text)
+
+          if (pageId) {
+            return pageId
+          }
+        }
+      }
+    }
+    this.logger.warn('No Notion page ID found in Slack event', slackEvent)
+    return undefined
   }
 
   static isUrlVerification(data: any): data is { type: 'url_verification', challenge: string } {
