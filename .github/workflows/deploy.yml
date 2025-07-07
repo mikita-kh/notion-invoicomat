@@ -1,0 +1,73 @@
+name: Deploy to Firebase
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allow manual trigger
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  deploy:
+    name: Deploy Firebase Functions
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Get pnpm store directory
+        id: pnpm-store
+        shell: bash
+        run: |
+          STORE_PATH=$(cd functions && pnpm store path --silent)
+          echo "STORE_PATH=$STORE_PATH" >> $GITHUB_ENV
+          echo "path=$STORE_PATH" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('functions/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies (including dev)
+        run: |
+          cd functions
+          pnpm install --frozen-lockfile
+
+      - name: Lint code
+        run: |
+          cd functions
+          pnpm run lint
+
+      - name: Build project
+        run: |
+          cd functions
+          pnpm run build
+
+      - name: Clean and install production dependencies only
+        run: |
+          cd functions
+          rm -rf node_modules
+          pnpm install --prod --frozen-lockfile --prefer-offline
+
+      - name: Deploy to Firebase Functions and Storage
+        uses: w9jds/firebase-action@master
+        with:
+          args: deploy --only functions,storage
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}

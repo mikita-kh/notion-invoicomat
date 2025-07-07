@@ -8,11 +8,19 @@
         ".git",
         "firebase-debug.log",
         "firebase-debug.*.log",
-        "*.local"
+        "*.local",
+        "src/",
+        "tsconfig.json",
+        "eslint.config.mjs",
+        "nest-cli.json",
+        "pnpm-workspace.yaml"
       ],
       "predeploy": [
         "npm --prefix \"$RESOURCE_DIR\" run build"
       ]
     }
-  ]
+  ],
+  "storage": {
+    "rules": "storage.rules"
+  }
 }

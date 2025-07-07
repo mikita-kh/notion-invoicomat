@@ -1,0 +1,20 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Rules for invoice files
+    match /invoices/{allPaths=**} {
+      // Allow read access to authenticated users only
+      allow read: if request.auth != null;
+      
+      // Allow write access only to Cloud Functions
+      allow write: if request.auth != null && request.auth.token.firebase.sign_in_provider == 'custom';
+    }
+    
+    // Deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
