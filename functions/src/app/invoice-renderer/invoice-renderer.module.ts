@@ -7,7 +7,10 @@ import { InvoiceRendererService } from './invoice-renderer.service'
 
 @Module({
   imports: [
-    ExchangeModule,
+    ExchangeModule.forFeature({
+      baseCurrency: 'PLN',
+      adapter: 'nbp',
+    }),
     HtmlToPdfModule,
     HtmlDocumentModule.forFeature({
       templateEngine: {

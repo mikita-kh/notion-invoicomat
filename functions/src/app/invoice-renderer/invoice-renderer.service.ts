@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer'
 
 import { Injectable, Logger } from '@nestjs/common'
+import { Currency } from '../exchange/exchange.interfaces'
 import { ExchangeService } from '../exchange/exchange.service'
 import { HtmlDocumentService } from '../html-document/html-document.service'
 import { HtmlToPdfOptions, HtmlToPdfService } from '../html-to-pdf/html-to-pdf.service'
@@ -41,7 +42,7 @@ export class InvoiceRendererService {
     let exchange = { rate: 1, currency, no: '', date: '' }
 
     if (invoiceInForeignCurrency) {
-      exchange = await this.exchange.getRate(currency, data.sale_date ?? data.issue_date)
+      exchange = await this.exchange.getRate(currency as Currency, data.sale_date ?? data.issue_date)
     }
 
     const context: InvoiceRendererContext = {

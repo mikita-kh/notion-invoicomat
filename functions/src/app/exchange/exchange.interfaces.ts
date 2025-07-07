@@ -4,3 +4,5 @@ export interface ExchangeRateResponse {
   date: string
   rate: number
 }
+
+export type Currency = 'PLN' | 'EUR' | 'USD'

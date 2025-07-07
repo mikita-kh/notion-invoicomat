@@ -1,6 +1,5 @@
+import { Currency } from '../../exchange/exchange.interfaces'
 import { I18nService } from '../../i18n/i18n.service'
-
-export type Currency = 'PLN' | 'EUR' | 'USD'
 
 export interface TemplateEngineAdapterOptions {
   locale: {
