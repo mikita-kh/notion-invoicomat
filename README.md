@@ -1,19 +1,64 @@
 # Notion InvoicOMat 🧾
 
-## Technical Overview
+[![Node.js](https://img.shields.io/badge/Node.js-22-green.svg)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue.svg)](https://www.typescriptlang.org/)
+[![NestJS](https://img.shields.io/badge/NestJS-11.1.3-red.svg)](https://nestjs.com/)
+[![Firebase](https://img.shields.io/badge/Firebase-Functions-orange.svg)](https://firebase.google.com/products/functions)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Notion InvoicOMat** is a microservice for automated PDF invoice generation from Notion pages with Slack integration and Firebase Storage. The system is built on NestJS with modular architecture and deployed as a Firebase Cloud Function.
+A serverless microservice for automated PDF invoice generation from Notion pages with Slack integration and Firebase Storage. Built with NestJS, deployed as Firebase Cloud Functions.
 
-### Key Features
+## Table of Contents
 
-- 🔄 **Automatic PDF generation** from Notion pages
-- 💬 **Slack integration** for invoice generation triggers
-- ☁️ **Firebase Storage** for PDF file storage
-- 🌐 **Multi-language support** (i18n)
-- 📊 **Currency conversion** with real-time exchange rates
-- 🎨 **Customizable templates** with Tailwind CSS
+- [Overview](#overview)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Project Structure](#project-structure)
+- [Technology Stack](#technology-stack)
+- [Development](#development)
+- [Deployment](#deployment)
+- [API Documentation](#api-documentation)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
 
-## System Architecture
+## Overview
+
+**Notion InvoicOMat** streamlines invoice generation by automating the conversion of structured Notion database entries into professional PDF invoices. The system integrates with Slack for triggering and uses Firebase for serverless execution and file storage.
+
+### How it Works
+
+1. **Data Management**: Invoice data is stored and managed in a Notion database
+2. **Trigger**: Slack automation sends webhook requests when invoices are ready
+3. **Processing**: Firebase Function retrieves data from Notion API
+4. **Generation**: HTML templates are rendered with Nunjucks and styled with Tailwind CSS
+5. **Conversion**: HTML is converted to PDF using Puppeteer
+6. **Storage**: Generated PDFs are uploaded to Firebase Storage
+7. **Completion**: Notion page is updated with the PDF download link
+
+## Features
+
+### 🚀 Core Features
+- **Automated PDF Generation** from Notion database entries
+- **Slack Integration** for webhook-triggered invoice processing
+- **Multi-language Support** (English/Polish) with i18n
+- **Currency Conversion** with real-time exchange rates
+- **Professional Templates** with customizable HTML/CSS styling
+- **Cloud Storage** integration with Firebase Storage
+
+### 🛠️ Technical Features
+- **Serverless Architecture** with Firebase Cloud Functions
+- **Type Safety** with full TypeScript coverage
+- **Modular Design** using NestJS dependency injection
+- **Modern Styling** with Tailwind CSS compilation
+- **Font Integration** with Inter Variable font
+- **Error Handling** with comprehensive logging
+- **CI/CD Pipeline** with GitHub Actions
+
+## Architecture
 
 ```mermaid
 graph TB
@@ -49,7 +94,7 @@ graph TB
     Slack -->|Webhook Event| Controller
     Controller -->|Process Event| SlackService
     SlackService -->|Extract Page ID| InvoiceProcessor
-    InvoiceProcessor -->|Get Data| NotionService
+    InvoiceProcessor -->|Fetch Data| NotionService
     NotionService -->|API Call| Notion
     InvoiceProcessor -->|Render PDF| InvoiceRenderer
     InvoiceRenderer -->|Exchange Rates| ExchangeService
@@ -58,7 +103,7 @@ graph TB
     InvoiceRenderer -->|Convert to PDF| HtmlToPdf
     InvoiceProcessor -->|Upload PDF| FirebaseStorage
     FirebaseStorage -->|Store File| Firebase
-    InvoiceProcessor -->|Update with URL| NotionService
+    InvoiceProcessor -->|Update URL| NotionService
     NotionService -->|Update Page| Notion
     
     %% Styling
@@ -71,124 +116,129 @@ graph TB
     class HtmlToPdf,HtmlDocument,ExchangeService,I18nService utility
 ```
 
-## Modular Architecture
+## Installation
 
-### 1. 🚀 **Core Modules**
+### Prerequisites
 
-#### **InvoiceProcessorModule**
-- **Purpose**: Orchestration of the entire invoice generation process
-- **Responsibility**: Linear data processing pipeline
-- **API**: `processInvoice(notionPageId: string)`
+- **Node.js** 22 or higher
+- **pnpm** package manager
+- **Firebase CLI** for deployment
+- **Notion API** access token
+- **Slack App** with webhook capabilities
 
-```typescript
-// Linear invoice processing workflow
-async process(notionPageId: string) {
-  const invoiceData = await this.receiveInvoiceData(notionPageId)
-  const pdfBuffer = await this.generateInvoicePdf(invoiceData)
-  const fileUrl = await this.saveInvoicePdfToFirebase(pdfBuffer, invoiceData)
-  await this.updateNotionPageInvoiceProperty(notionPageId, fileUrl)
-}
+### Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd notion-invoicomat
+   ```
+
+2. **Install dependencies**
+   ```bash
+   cd functions
+   pnpm install
+   ```
+
+3. **Set up Firebase project**
+   ```bash
+   firebase login
+   firebase init functions
+   ```
+
+4. **Configure environment variables**
+   ```bash
+   cp functions/.env.example functions/.env
+   # Edit .env file with your API keys
+   ```
+
+## Configuration
+
+### Environment Variables
+
+Create a `.env` file in the `functions` directory:
+
+```bash
+# Required
+NOTION_API_KEY=your_notion_integration_token
+
+# Optional - will use NBP API if not provided
+EXCHANGE_API_KEY=your_exchange_rate_api_key
 ```
 
-#### **SlackModule**
-- **Purpose**: Processing Slack webhook events
-- **Responsibility**: Parsing Slack events and extracting Notion page ID
-- **Integration**: Direct integration with `InvoiceProcessorService`
+### Firebase Secrets
 
-#### **NotionModule**
-- **Purpose**: Notion API integration
-- **Responsibility**: Retrieving and updating page data
-- **Functions**: Data normalization, page property updates
+For production deployment, store sensitive data as Firebase secrets:
 
-#### **FirebaseModule**
-- **Purpose**: Firebase services integration
-- **Responsibility**: Firebase Admin SDK initialization, file storage
-- **Architecture**: Singleton pattern for Firebase App instance
-
-### 2. 🛠 **Utility Modules**
-
-#### **InvoiceRendererModule**
-- **Purpose**: HTML rendering and PDF conversion
-- **Dependencies**: `HtmlDocumentService`, `HtmlToPdfService`, `ExchangeService`
-- **Features**: Tailwind CSS support, dynamic currency conversion
-
-#### **HtmlToPdfModule**
-- **Purpose**: HTML to PDF conversion
-- **Technology**: Puppeteer with optimized settings
-- **Configuration**: A4 format, scaling, background images
-
-#### **I18nModule**
-- **Purpose**: Internationalization
-- **Support**: English, Polish languages
-- **Technology**: Custom i18n loader with nested keys support
-
-### 3. 🔧 **Configuration & Infrastructure**
-
-#### **ConfigModule**
-- **Purpose**: Centralized configuration
-- **Sources**: Environment variables, Firebase secrets
-- **Validation**: Schema validation for critical parameters
-
-## Technical Solutions and Benefits
-
-### 🎯 **Refactoring from Pipeline to Service-based Architecture**
-
-#### **Before (Pipeline):**
-```typescript
-// Complex pipeline architecture with abstract interfaces
-interface InvoiceProcessorPipeline {
-  process(context: ProcessingContext): Promise<ProcessingResult>
-}
+```bash
+firebase functions:secrets:set NOTION_API_KEY
+firebase functions:secrets:set EXCHANGE_API_KEY
 ```
 
-#### **After (Service-based):**
-```typescript
-// Explicit, linear API with clear responsibilities
-class InvoiceProcessorService {
-  async process(notionPageId: string): Promise<void>
-  private async receiveInvoiceData(pageId: string): Promise<InvoiceData>
-  private async generateInvoicePdf(invoiceData: InvoiceData): Promise<Buffer>
-  private async saveInvoicePdfToFirebase(pdfBuffer: Buffer, invoiceData: InvoiceData): Promise<string>
-  private async updateNotionPageInvoiceProperty(pageId: string, url: string): Promise<void>
-}
+### Notion Database Setup
+
+Your Notion database should include the following properties:
+- `invoice_number` (Title)
+- `issue_date` (Date)
+- `seller` (Relation to seller database)
+- `client` (Relation to client database)
+- `entries` (Relation to line items database)
+- `currency` (Select: PLN, USD, EUR)
+- `invoice_pdf` (URL - populated by the service)
+
+### Slack Integration
+
+1. Create a Slack App with webhook permissions
+2. Set up workflow automation to send POST requests to your Firebase Function
+3. Include Notion page URL in the webhook payload
+
+## Usage
+
+### Automatic Processing (Recommended)
+
+1. **Prepare Invoice Data**: Fill out your Notion database with invoice details
+2. **Trigger via Slack**: Use Slack automation to send webhook with Notion page URL
+3. **Automatic Processing**: The system will:
+   - Extract Notion page ID from Slack webhook
+   - Fetch invoice data from Notion API
+   - Generate HTML using Nunjucks templates
+   - Convert to PDF with Puppeteer
+   - Upload to Firebase Storage
+   - Update Notion page with PDF link
+
+### Manual Testing
+
+For development and testing, you can invoke the function directly:
+
+```bash
+# Local development
+cd functions
+pnpm run serve
+
+# Test webhook endpoint
+curl -X POST http://localhost:5001/your-project/us-central1/webhook/slack/events \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event": {
+      "type": "message",
+      "blocks": [{
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": "Invoice ready: https://notion.so/your-page-id"
+        }
+      }]
+    }
+  }'
 ```
 
-### 📈 **Benefits of New Architecture:**
+### Workflow Example
 
-1. **Linearity and Readability**: Clear sequence of steps
-2. **Fault Tolerance**: Each step has its own error handling
-3. **Testability**: Each method can be tested independently
-4. **Logging**: Detailed logs at each stage
-5. **Performance**: No unnecessary abstractions
-
-### 🔐 **Firebase Integration**
-
-#### **New Firebase Architecture:**
-```typescript
-// Centralized Firebase initialization
-@Module({
-  providers: [FirebaseAdminService, FirebaseStorageService],
-  exports: [FirebaseAdminService, FirebaseStorageService],
-})
-export class FirebaseModule implements OnModuleInit {
-  onModuleInit() {
-    this.firebaseAdminService.initializeFirebaseAdmin()
-  }
-}
-```
-
-**Benefits:**
-- 🎯 **Singleton pattern** for Firebase App instance
-- 🔒 **Secure initialization** through Admin SDK
-- 📊 **Optimized Storage operations** through Buffer API
-- 🏗️ **Modular structure** for reusability
-
-### 🎨 **Template Engine & Styling**
-
-- **Nunjucks** for dynamic HTML templates
-- **Tailwind CSS** for modern styling
-- **Responsive design** for correct PDF rendering
-- **Dynamic content** with variable and loop support
+1. **Create Invoice in Notion**: Add new row to invoice database
+2. **Fill Required Fields**: Invoice number, date, client, line items
+3. **Trigger Slack Automation**: Send message with Notion page URL
+4. **Automatic Processing**: System processes invoice
+5. **Receive PDF**: Download link appears in Notion page
 
 ## Project Structure
 
@@ -197,202 +247,245 @@ functions/
 ├── src/
 │   ├── app/
 │   │   ├── config/                    # Configuration module
-│   │   ├── i18n/                      # Internationalization
-│   │   │   └── locales/               # Language files
-│   │   ├── invoice-processor/         # Core invoice processing
-│   │   ├── invoice-renderer/          # PDF rendering
-│   │   │   └── services/
-│   │   │       └── templates/         # HTML templates
-│   │   ├── notion/                    # Notion API integration
+│   │   │   ├── config.module.ts       # Global configuration
+│   │   │   └── configuration.ts       # Environment variables
 │   │   ├── slack/                     # Slack webhook handling
-│   │   ├── firebase/                  # Firebase services
+│   │   │   ├── slack.controller.ts    # HTTP endpoints
+│   │   │   ├── slack.service.ts       # Business logic
+│   │   │   └── slack.module.ts        # Module definition
+│   │   ├── invoice-processor/         # Core invoice processing
+│   │   │   ├── invoice-processor.service.ts
+│   │   │   └── invoice-processor.module.ts
+│   │   ├── notion/                    # Notion API integration
+│   │   │   ├── notion.service.ts      # API client wrapper
+│   │   │   └── notion.module.ts
+│   │   ├── invoice-renderer/          # PDF generation
+│   │   │   ├── invoice-renderer.service.ts
+│   │   │   ├── invoice-renderer.module.ts
+│   │   │   └── templates/             # Nunjucks templates
+│   │   │       └── invoice.njk        # Main invoice template
+│   │   ├── html-document/             # HTML generation utilities
+│   │   │   ├── html-document.service.ts
+│   │   │   ├── template-engine/       # Template adapters
+│   │   │   ├── css-compiler/          # Tailwind CSS integration
+│   │   │   └── font-inliner/          # Font embedding
 │   │   ├── html-to-pdf/               # PDF conversion
-│   │   ├── html-document/             # HTML generation
-│   │   └── exchange/                  # Currency exchange
+│   │   │   ├── html-to-pdf.service.ts # Puppeteer wrapper
+│   │   │   └── html-to-pdf.module.ts
+│   │   ├── firebase/                  # Firebase services
+│   │   │   ├── firebase-storage.service.ts
+│   │   │   └── firebase.module.ts
+│   │   ├── exchange/                  # Currency conversion
+│   │   │   ├── exchange.service.ts    # Exchange rate API
+│   │   │   └── exchange.module.ts
+│   │   ├── i18n/                      # Internationalization
+│   │   │   ├── i18n.service.ts
+│   │   │   ├── i18n.module.ts
+│   │   │   └── locales/               # Translation files
+│   │   │       ├── en/                # English translations
+│   │   │       └── pl/                # Polish translations
+│   │   ├── shared/                    # Shared utilities
+│   │   ├── app.module.ts              # Root application module
+│   │   └── main.ts                    # NestJS bootstrap
 │   └── index.ts                       # Firebase Function entry point
-├── package.json
-├── firebase.json
-└── nest-cli.json
+├── package.json                       # Dependencies and scripts
+├── tsconfig.json                      # TypeScript configuration
+├── nest-cli.json                      # NestJS CLI configuration
+├── eslint.config.mjs                  # ESLint configuration
+└── .env.example                       # Environment variables template
 ```
 
-## Data Flow
+## Technology Stack
 
-### 1. **Slack Event Processing**
-```
-Slack Webhook → SlackController → SlackService → InvoiceProcessorService
-```
-
-### 2. **Invoice Generation Pipeline**
-```
-Notion Page ID → Retrieve Data → Generate HTML → Convert to PDF → Upload to Firebase → Update Notion
-```
-
-### 3. **Error Handling**
-- Each service has its own logging
-- Centralized error handling through NestJS
-- Graceful failures with detailed error messages
-
-## Deployment & Infrastructure
-
-### **Firebase Cloud Functions**
+### Core Technologies
 - **Runtime**: Node.js 22
-- **Trigger**: HTTPS webhook
-- **Secrets**: Notion API key through Firebase Secrets
-- **Memory**: Optimized for PDF generation
-- **Timeout**: Extended for processing large documents
+- **Language**: TypeScript 5.8.3
+- **Framework**: NestJS 11.1.3
+- **Platform**: Firebase Cloud Functions
 
-### **Environment Configuration**
-```typescript
-// Development vs Production
-const isDevOrEmulator = process.env.NODE_ENV === 'development' || process.env.FUNCTIONS_EMULATOR === 'true'
+### Key Dependencies
+- **Template Engine**: Nunjucks 3.2.4
+- **CSS Framework**: Tailwind CSS 3.4.17
+- **PDF Generation**: Puppeteer 24.11.2
+- **API Client**: @notionhq/client 3.1.3
+- **Font Loading**: @fontsource-variable/inter 5.2.6
+- **Internationalization**: intl-messageformat 10.7.16
 
-// Conditional caching
-...(isDevOrEmulator ? [CacheModule.register({ ttl: 3.6e6, isGlobal: true })] : [])
-```
+### Development Tools
+- **Linting**: ESLint with @antfu/eslint-config
+- **Package Manager**: pnpm
+- **Deployment**: GitHub Actions
 
-## API Endpoints
+## Development
 
-### **Slack Integration**
-```
-POST /slack/events
-```
-- **Purpose**: Handle Slack webhook events
-- **Authentication**: Slack URL verification
-- **Content-Type**: application/json
+### Local Development
 
-### **Testing Endpoints**
-```
-GET /
-```
-- **Purpose**: Health check
-- **Response**: Simple HTML page
+1. **Start Firebase Emulator**
+   ```bash
+   cd functions
+   pnpm run serve
+   ```
 
-## Security Features
+2. **Watch Mode**
+   ```bash
+   pnpm run build:watch
+   ```
 
-### 🔐 **Authentication & Authorization**
-- **Slack**: URL verification through interceptor
-- **Notion**: API key through Firebase Secrets
-- **Firebase**: Admin SDK with service account
+3. **Linting**
+   ```bash
+   pnpm run lint
+   ```
 
-### 🛡️ **Input Validation**
-- **Slack events**: Type validation through TypeScript interfaces
-- **Notion data**: Schema validation for invoice data
-- **File uploads**: Content-type validation
+### Code Quality
 
-## Performance Optimizations
+The project uses ESLint with Antfu's configuration for consistent code style:
+- TypeScript strict mode enabled
+- Consistent import style (no-type-imports)
+- 1TBS brace style enforced
+- Automatic formatting on save
 
-### 🚀 **Caching Strategy**
-- **Development**: 1-hour TTL cache for API responses
-- **Production**: No caching for real-time updates
-- **Firebase**: Singleton pattern for App instance
+### Testing Webhooks
 
-### 📊 **PDF Generation**
-- **Puppeteer**: Optimized for serverless environment
-- **Buffer handling**: Efficient memory management
-- **Tailwind CSS**: Purged CSS for minimal size
+Use tools like ngrok for local webhook testing:
 
-## Monitoring & Logging
-
-### 📈 **Structured Logging**
-```typescript
-this.logger.debug('Invoice data retrieved', invoiceData)
-this.logger.log('Invoice processing completed', result)
-this.logger.error('Failed to process invoice', error)
-```
-
-### 🔍 **Error Tracking**
-- **Firebase Functions**: Built-in error reporting
-- **NestJS**: Centralized exception handling
-- **Service-level**: Detailed error context
-
-## Development Setup
-
-### **Prerequisites**
-- Node.js 22+
-- Firebase CLI
-- pnpm (package manager)
-
-### **Local Development**
 ```bash
-# Install dependencies
-cd functions && pnpm install
+# Install ngrok
+npm install -g ngrok
 
-# Start emulator
-pnpm run serve
+# Expose local Firebase emulator
+ngrok http 5001
 
-# Build for production
+# Use ngrok URL in Slack webhook configuration
+```
+
+## Deployment
+
+### Automatic Deployment
+
+The project includes GitHub Actions workflow for automatic deployment:
+
+```yaml
+# .github/workflows/deploy.yml
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+```
+
+### Manual Deployment
+
+```bash
+# Build and deploy
+cd functions
 pnpm run build
-
-# Deploy to Firebase
-pnpm run deploy
+firebase deploy --only functions,storage
 ```
 
-### **Environment Variables**
+### Environment Setup
+
+1. **Set Firebase secrets**
+   ```bash
+   firebase functions:secrets:set NOTION_API_KEY="your_notion_token"
+   ```
+
+2. **Configure storage rules**
+   ```bash
+   firebase deploy --only storage
+   ```
+
+## API Documentation
+
+### Webhook Endpoints
+
+#### POST `/slack/events`
+
+Handles Slack webhook events for invoice processing.
+
+**Request Body:**
+```json
+{
+  "type": "url_verification",
+  "challenge": "challenge_string"
+}
+```
+
+Or:
+
+```json
+{
+  "event": {
+    "type": "message",
+    "blocks": [{
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "Invoice ready: https://notion.so/page-id"
+      }
+    }]
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "status": "ok"
+}
+```
+
+### Processing Flow
+
+1. **Slack URL Verification**: Handled automatically by interceptor
+2. **Page ID Extraction**: Parses Notion URL from Slack message
+3. **Data Retrieval**: Fetches invoice data from Notion API
+4. **PDF Generation**: Creates PDF using templates and styling
+5. **Storage Upload**: Saves PDF to Firebase Storage
+6. **Notion Update**: Updates original page with PDF URL
+
+### Debug Mode
+
+Enable detailed logging by setting environment variables:
+
 ```bash
-# Required
-NOTION_API_KEY=your_notion_api_key
-
-# Optional
-NODE_ENV=development
-FUNCTIONS_EMULATOR=true
+DEBUG=true
+LOG_LEVEL=debug
 ```
 
-## Future Enhancements
+### Performance Optimization
 
-### 🔮 **Planned Features**
-1. **Email notifications** for invoice generation
-2. **Webhook callbacks** for external systems
-3. **Batch processing** for multiple invoices
-4. **Custom templates** through Notion database
-5. **Analytics dashboard** for generation tracking
+- **Memory**: Increase function memory allocation for PDF generation
+- **Timeout**: Set appropriate timeout values for external API calls
+- **Caching**: Consider implementing exchange rate caching for production
 
-### 🏗️ **Architecture Improvements**
-1. **Queue system** for background processing
-2. **Redis caching** for production
-3. **Rate limiting** for API endpoints
-4. **Health checks** for monitoring
-5. **OpenAPI documentation** for API
+## Contributing
 
----
+### Guidelines
 
-## Technical Opinion
+1. **Fork** the repository
+2. **Create** feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** changes (`git commit -m 'Add amazing feature'`)
+4. **Push** to branch (`git push origin feature/amazing-feature`)
+5. **Open** Pull Request
 
-### 🎯 **Architectural Decisions**
+### Development Standards
 
-**NestJS Choice** is justified for this project due to:
-- Powerful dependency injection system
-- Modular architecture out of the box
-- Built-in support for decorators and middleware
-- Excellent TypeScript support
+- Follow existing code style (ESLint configuration)
+- Add tests for new functionality
+- Update documentation for API changes
+- Ensure all CI checks pass
 
-**Service-based Architecture** vs Pipeline pattern:
-- More predictable and linear code
-- Easier testing and debugging
-- Clear separation of responsibilities
-- Better performance without unnecessary abstractions
+### Code Review Process
 
-**Firebase as Platform** provides:
-- Serverless execution without infrastructure management
-- Automatic scaling
-- Integrated file storage
-- Security through IAM and secrets
+- All changes require code review
+- Automated tests must pass
+- Documentation updates required for user-facing changes
 
-### 📊 **Performance Considerations**
+## License
 
-1. **PDF Generation**: Puppeteer optimized for serverless through headless mode
-2. **Memory Management**: Buffer API for efficient handling of large files
-3. **Firebase Storage**: Direct upload without temporary files
-4. **Caching**: Conditional caching for development/production
-
-### 🔧 **Maintainability**
-
-New architecture ensures:
-- **Clear separation of concerns** between modules
-- **Explicit dependencies** through dependency injection
-- **Comprehensive logging** at every level
-- **Type safety** through TypeScript interfaces
-- **Testability** of each component separately
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-*Developed using modern architectural principles and best practices for enterprise-grade applications.*
+**Built with ❤️ using NestJS, Firebase, and modern web technologies.**
+
+For questions or support, please open an issue in the GitHub repository.
