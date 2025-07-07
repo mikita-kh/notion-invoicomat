@@ -62,58 +62,86 @@ A serverless microservice for automated PDF invoice generation from Notion pages
 
 ```mermaid
 graph TB
-    %% External services
-    Slack[Slack Webhook]
-    Notion[Notion API]
-    Firebase[Firebase Storage]
-    Exchange[Exchange Rate API]
+    %% External Services Layer
+    subgraph EXT["🌐 External Services"]
+        direction TB
+        Slack["💬 Slack Webhook<br/>Automation Trigger"]
+        Notion["📝 Notion API<br/>Database & CMS"]
+        Firebase["☁️ Firebase Storage<br/>File Storage"]
+        Exchange["💱 Exchange Rate API<br/>Currency Conversion"]
+    end
     
-    %% Application layers
-    subgraph "Firebase Cloud Function"
-        subgraph "NestJS Application"
-            Controller[SlackController]
+    %% Firebase Cloud Function Container
+    subgraph FUNC["🔥 Firebase Cloud Function"]
+        direction TB
+        
+        %% Entry Point
+        subgraph ENTRY["📡 API Gateway"]
+            Controller["🎯 SlackController<br/>HTTP Endpoint"]
+        end
+        
+        %% NestJS Application Core
+        subgraph NEST["⚡ NestJS Application"]
+            direction TB
             
-            subgraph "Core Services"
-                SlackService[SlackService]
-                InvoiceProcessor[InvoiceProcessorService]
-                NotionService[NotionService]
-                InvoiceRenderer[InvoiceRendererService]
-                FirebaseStorage[FirebaseStorageService]
+            %% Core Business Logic
+            subgraph CORE["🏗️ Core Services"]
+                direction TB
+                SlackService["💬 SlackService<br/>Event Processing"]
+                InvoiceProcessor["⚙️ InvoiceProcessor<br/>Main Orchestrator"]
+                NotionService["📝 NotionService<br/>API Client"]
+                InvoiceRenderer["🖨️ InvoiceRenderer<br/>PDF Generation"]
+                FirebaseStorage["☁️ FirebaseStorage<br/>Upload Manager"]
             end
             
-            subgraph "Utility Services"
-                HtmlToPdf[HtmlToPdfService]
-                HtmlDocument[HtmlDocumentService]
-                ExchangeService[ExchangeService]
-                I18nService[I18nService]
+            %% Utility Services
+            subgraph UTIL["🛠️ Utility Services"]
+                direction TB
+                HtmlToPdf["📄 HtmlToPdf<br/>Puppeteer Engine"]
+                HtmlDocument["🎨 HtmlDocument<br/>Template Engine"]
+                ExchangeService["💱 ExchangeService<br/>Rate Calculator"]
+                I18nService["🌍 I18nService<br/>Localization"]
             end
         end
     end
     
-    %% Data flow
-    Slack -->|Webhook Event| Controller
-    Controller -->|Process Event| SlackService
-    SlackService -->|Extract Page ID| InvoiceProcessor
-    InvoiceProcessor -->|Fetch Data| NotionService
-    NotionService -->|API Call| Notion
-    InvoiceProcessor -->|Render PDF| InvoiceRenderer
-    InvoiceRenderer -->|Exchange Rates| ExchangeService
-    ExchangeService -->|API Call| Exchange
-    InvoiceRenderer -->|Generate HTML| HtmlDocument
-    InvoiceRenderer -->|Convert to PDF| HtmlToPdf
-    InvoiceProcessor -->|Upload PDF| FirebaseStorage
-    FirebaseStorage -->|Store File| Firebase
-    InvoiceProcessor -->|Update URL| NotionService
-    NotionService -->|Update Page| Notion
+    %% Data Flow - Primary Path
+    Slack -.->|"1️⃣ Webhook Event"| Controller
+    Controller -.->|"2️⃣ Process Event"| SlackService
+    SlackService -.->|"3️⃣ Extract Page ID"| InvoiceProcessor
     
-    %% Styling
-    classDef external fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef core fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef utility fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+    %% Data Retrieval
+    InvoiceProcessor -.->|"4️⃣ Fetch Data"| NotionService
+    NotionService -.->|"5️⃣ API Call"| Notion
     
+    %% PDF Generation Pipeline
+    InvoiceProcessor -.->|"6️⃣ Render PDF"| InvoiceRenderer
+    InvoiceRenderer -.->|"7️⃣ Get Rates"| ExchangeService
+    ExchangeService -.->|"8️⃣ API Call"| Exchange
+    InvoiceRenderer -.->|"9️⃣ Generate HTML"| HtmlDocument
+    InvoiceRenderer -.->|"🔟 Convert to PDF"| HtmlToPdf
+    
+    %% Storage & Completion
+    InvoiceProcessor -.->|"1️⃣1️⃣ Upload PDF"| FirebaseStorage
+    FirebaseStorage -.->|"1️⃣2️⃣ Store File"| Firebase
+    InvoiceProcessor -.->|"1️⃣3️⃣ Update URL"| NotionService
+    NotionService -.->|"1️⃣4️⃣ Update Page"| Notion
+    
+    %% Styling for modern presentation
+    classDef external fill:#e3f2fd,stroke:#1976d2,stroke-width:3px,color:#000,stroke-dasharray: 5 5
+    classDef controller fill:#fff3e0,stroke:#f57c00,stroke-width:3px,color:#000,font-weight:bold
+    classDef core fill:#f3e5f5,stroke:#7b1fa2,stroke-width:3px,color:#000,font-weight:bold
+    classDef utility fill:#e8f5e8,stroke:#388e3c,stroke-width:3px,color:#000
+    classDef container fill:#fafafa,stroke:#616161,stroke-width:2px,color:#000,font-weight:bold
+    classDef subcontainer fill:#ffffff,stroke:#9e9e9e,stroke-width:1px,color:#000
+    
+    %% Apply styles
     class Slack,Notion,Firebase,Exchange external
+    class Controller controller
     class SlackService,InvoiceProcessor,NotionService,InvoiceRenderer,FirebaseStorage core
     class HtmlToPdf,HtmlDocument,ExchangeService,I18nService utility
+    class EXT,FUNC container
+    class ENTRY,NEST,CORE,UTIL subcontainer
 ```
 
 ## Installation
