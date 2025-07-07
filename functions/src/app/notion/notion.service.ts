@@ -1,8 +1,6 @@
-import { CACHE_MANAGER } from '@nestjs/cache-manager'
-import { Inject, Injectable, Logger, Optional } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Client as NotionClient, PageObjectResponse } from '@notionhq/client'
-import { Cache } from 'cache-manager'
 import { NotionTransformerService } from './notion-transformer.service'
 
 @Injectable()
@@ -13,7 +11,6 @@ export class NotionService {
   constructor(
     private readonly configService: ConfigService,
     private readonly notionTransformerService: NotionTransformerService,
-    @Optional() @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {
     this.#client = new NotionClient({
       auth: this.configService.get<string>('NOTION_API_KEY'),
@@ -21,20 +18,12 @@ export class NotionService {
   }
 
   async getNormilizedPageData(id: string) {
-    let result = await this.cacheManager?.get<Record<string, any>>(id)
+    const { properties } = await this.#retrievePageWithResolvedRelations(id)
 
-    if (!result) {
-      const { properties } = await this.#retrievePageWithResolvedRelations(id)
-
-      result = this.notionTransformerService.transform({
-        id,
-        properties,
-      })
-
-      await this.cacheManager?.set(id, result)
-    }
-
-    return result
+    return this.notionTransformerService.transform({
+      id,
+      properties,
+    })
   }
 
   async #retrievePageWithResolvedRelations(id: string, visited = new Map<string, true>()) {
@@ -84,9 +73,6 @@ export class NotionService {
           [propertyName]: propertyValue,
         },
       })
-
-      // Очищаем кэш для этой страницы
-      await this.cacheManager?.del(pageId)
 
       this.#logger.log(`Page property updated successfully: ${pageId}.${propertyName}`)
     } catch (error) {

@@ -1,6 +1,3 @@
-import process from 'node:process'
-
-import { CacheModule } from '@nestjs/cache-manager'
 import { Module } from '@nestjs/common'
 
 import { AppController } from './app.controller'
@@ -11,13 +8,8 @@ import { InvoiceRendererModule } from './invoice-renderer/invoice-renderer.modul
 import { NotionModule } from './notion/notion.module'
 import { SlackModule } from './slack/slack.module'
 
-const isDevOrEmulator = process.env.NODE_ENV === 'development' || process.env.FUNCTIONS_EMULATOR === 'true'
-
 @Module({
   imports: [
-    ...(isDevOrEmulator
-      ? [CacheModule.register({ ttl: 3.6e6, isGlobal: true })] // Cache for 1 hour
-      : []),
     ConfigModule,
     I18nModule,
     SlackModule,
