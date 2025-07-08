@@ -80,7 +80,10 @@ jobs:
       - name: Setup Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
       - name: Deploy to Firebase Functions and Storage
         run: |
           cd functions
-          npx firebase deploy --only functions,storage
+          firebase deploy --only functions,storage
