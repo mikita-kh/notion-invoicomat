@@ -83,7 +83,7 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      - name: Deploy to Firebase Functions and Storage
+      - name: Deploy to Firebase Functions
         run: |
           cd functions
-          firebase deploy --only functions,storage
+          firebase deploy --only functions
