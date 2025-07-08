@@ -390,7 +390,7 @@ ngrok http 5001
 
 ### Automatic Deployment
 
-The project includes GitHub Actions workflow for automatic deployment:
+The project uses GitHub Actions with Workload Identity Federation for secure, keyless authentication:
 
 ```yaml
 # .github/workflows/deploy.yml
@@ -398,25 +398,45 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write  # Required for WIF
 ```
+
+**Setup Requirements:**
+1. **Google Cloud Workload Identity Federation** configured
+2. **GitHub repository** connected to Google Cloud project
+3. **Service Account** with Firebase deployment permissions
 
 ### Manual Deployment
 
 ```bash
+# Authenticate with Google Cloud
+gcloud auth login
+
 # Build and deploy
 cd functions
 pnpm run build
-firebase deploy --only functions,storage
+firebase deploy --only functions,storage --project your-project-id
 ```
 
 ### Environment Setup
 
-1. **Set Firebase secrets**
+1. **Configure Workload Identity Federation**
+   ```bash
+   # Already configured in your Google Cloud Console
+   # Workload Identity Pool: github-pool
+   # Provider: github
+   # Service Account: firebase-adminsdk-fbsvc@mikita-dev-f86aa.iam.gserviceaccount.com
+   ```
+
+2. **Set Firebase secrets**
    ```bash
    firebase functions:secrets:set NOTION_API_KEY="your_notion_token"
    ```
 
-2. **Configure storage rules**
+3. **Configure storage rules**
    ```bash
    firebase deploy --only storage
    ```

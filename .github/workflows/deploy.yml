@@ -14,6 +14,11 @@ jobs:
     name: Deploy Firebase Functions
     runs-on: ubuntu-latest
     
+    # Grant GITHUB_TOKEN write permissions for id-token
+    permissions:
+      contents: read
+      id-token: write
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -65,9 +70,17 @@ jobs:
           rm -rf node_modules
           pnpm install --prod --frozen-lockfile --prefer-offline
 
-      - name: Deploy to Firebase Functions and Storage
-        uses: w9jds/firebase-action@master
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
         with:
-          args: deploy --only functions,storage
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          workload_identity_provider: projects/463220462105/locations/global/workloadIdentityPools/github-pool/providers/github
+          service_account: firebase-adminsdk-fbsvc@mikita-dev-f86aa.iam.gserviceaccount.com
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Firebase Functions and Storage
+        run: |
+          cd functions
+          npx firebase deploy --only functions,storage
