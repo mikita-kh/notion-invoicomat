@@ -50,25 +50,19 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies (including dev)
+        working-directory: ./functions
         run: |
-          cd functions
           pnpm install --frozen-lockfile
 
       - name: Lint code
+        working-directory: ./functions
         run: |
-          cd functions
           pnpm run lint
 
       - name: Build project
+        working-directory: ./functions
         run: |
-          cd functions
           pnpm run build
-
-      - name: Clean and install production dependencies only
-        run: |
-          cd functions
-          rm -rf node_modules
-          pnpm install --prod --frozen-lockfile --prefer-offline
 
       - name: Authenticate to Google Cloud
         id: auth
@@ -77,13 +71,10 @@ jobs:
           workload_identity_provider: projects/463220462105/locations/global/workloadIdentityPools/github-pool/providers/github
           service_account: firebase-adminsdk-fbsvc@mikita-dev-f86aa.iam.gserviceaccount.com
 
-      - name: Setup Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
       - name: Install Firebase CLI
-        run: npm install -g firebase-tools
+        run: |
+          npm install -g firebase-tools
 
       - name: Deploy to Firebase Functions
         run: |
-          cd functions
           firebase deploy --only functions
