@@ -16,3 +16,9 @@ export interface InvoiceProcessingResult {
   skipped?: boolean
   error?: string
 }
+
+export enum InvoiceStatus {
+  InProgress = 'In progress',
+  Ready = 'Ready',
+  Error = 'Error',
+}

@@ -4,6 +4,7 @@ import { FirebaseStorageService } from '../firebase/firebase-storage.service'
 import { InvoiceData } from '../invoice-renderer/invoice-renderer.interfaces'
 import { InvoiceRendererService } from '../invoice-renderer/invoice-renderer.service'
 import { NotionService } from '../notion/notion.service'
+import { InvoiceStatus } from './invoice-processor.interfaces'
 
 @Injectable()
 export class InvoiceProcessorService {
@@ -16,10 +17,16 @@ export class InvoiceProcessorService {
   ) {}
 
   async process(notionPageId: string) {
-    const invoiceData = await this.receiveInvoiceData(notionPageId)
-    const pdfBuffer = await this.generateInvoicePdf(invoiceData)
-    const fileUrl = await this.saveInvoicePdfToFirebase(pdfBuffer, invoiceData)
-    await this.updateNotionPageInvoiceProperty(notionPageId, fileUrl)
+    try {
+      await this.updateNotionPageStatusProperty(notionPageId, InvoiceStatus.InProgress)
+      const invoiceData = await this.receiveInvoiceData(notionPageId)
+      const pdfBuffer = await this.generateInvoicePdf(invoiceData)
+      const fileUrl = await this.saveInvoicePdfToFirebase(pdfBuffer, invoiceData)
+      await this.updateNotionPageInvoiceProperty(notionPageId, fileUrl)
+      await this.updateNotionPageStatusProperty(notionPageId, InvoiceStatus.Ready)
+    } catch {
+      await this.updateNotionPageStatusProperty(notionPageId, InvoiceStatus.Error)
+    }
   }
 
   private async receiveInvoiceData(pageId: string): Promise<InvoiceData> {
@@ -78,10 +85,23 @@ export class InvoiceProcessorService {
   ): Promise<void> {
     try {
       this.logger.log(`Updating Notion page ${pageId} 'invoice' property with URL ${url}`)
-      this.notionService.updatePageProperty(pageId, 'invoice', { type: 'url', url })
+      await this.notionService.updatePageProperty(pageId, 'invoice', { type: 'url', url })
+      await this.notionService.updatePageProperty(pageId, 'status', { type: 'select', select: { name: 'Ready' } })
     } catch (error) {
       this.logger.error(`Error updating Notion page ${pageId} 'invoice' property`, error)
       throw error
+    }
+  }
+
+  private async updateNotionPageStatusProperty(
+    pageId: string,
+    status: InvoiceStatus,
+  ): Promise<void> {
+    try {
+      this.logger.log(`Updating Notion page ${pageId} 'status' property with ${status}`)
+      await this.notionService.updatePageProperty(pageId, 'status', { type: 'select', select: { name: status } })
+    } catch (error) {
+      this.logger.error(`Error updating Notion page ${pageId} 'invoice' property`, error)
     }
   }
 }
