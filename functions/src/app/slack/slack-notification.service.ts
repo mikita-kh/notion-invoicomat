@@ -9,12 +9,12 @@ export class SlackNotificationService {
   private readonly logger = new Logger(SlackNotificationService.name)
 
   constructor(
-    private readonly config: ConfigService<{ slackWebhookUrl: string }>,
+    private readonly config: ConfigService<{ SLACK_WEBHOOK_URL: string }>,
   ) {}
 
   async sendMessage(message: SlackMessage): Promise<void> {
     try {
-      const webhookUrl = this.config.get<string>('slackWebhookUrl')
+      const webhookUrl = this.config.get<string>('SLACK_WEBHOOK_URL')
 
       if (!webhookUrl) {
         this.logger.warn('Slack webhook URL is not configured, skipping notification')
