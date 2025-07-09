@@ -44,6 +44,7 @@ A serverless microservice for automated PDF invoice generation from Notion pages
 ### 🚀 Core Features
 - **Automated PDF Generation** from Notion database entries
 - **Slack Integration** for webhook-triggered invoice processing
+- **Smart Notifications** with success/error messages sent back to Slack
 - **Multi-language Support** (English/Polish) with i18n
 - **Currency Conversion** with real-time exchange rates
 - **Professional Templates** with customizable HTML/CSS styling
@@ -190,8 +191,9 @@ Create a `.env` file in the `functions` directory:
 # Required
 NOTION_API_KEY=your_notion_integration_token
 
-# Optional - will use NBP API if not provided
-EXCHANGE_API_KEY=your_exchange_rate_api_key
+
+# Optional - for Slack notifications about processing status
+SLACK_WEBHOOK_URL=your_slack_webhook_url
 ```
 
 ### Firebase Secrets
@@ -200,7 +202,7 @@ For production deployment, store sensitive data as Firebase secrets:
 
 ```bash
 firebase functions:secrets:set NOTION_API_KEY
-firebase functions:secrets:set EXCHANGE_API_KEY
+firebase functions:secrets:set SLACK_WEBHOOK_URL
 ```
 
 ### Notion Database Setup
