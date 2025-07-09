@@ -1,7 +1,9 @@
 import { Buffer } from 'node:buffer'
+import os from 'node:os'
 
 import { Injectable, Logger } from '@nestjs/common'
-import puppeteer from 'puppeteer'
+import chromium from '@sparticuz/chromium'
+import puppeteer from 'puppeteer-core'
 
 export interface HtmlToPdfOptions {
   format?: 'A4' | 'A3' | 'Letter' | 'Legal'
@@ -31,8 +33,18 @@ export class HtmlToPdfService {
     this.logger.debug('Generating PDF with Puppeteer')
 
     const browser = await puppeteer.launch({
+      args: [...chromium.args, '--disable-dev-shm-usage'],
+      defaultViewport: {
+        deviceScaleFactor: 1,
+        hasTouch: false,
+        height: 1080,
+        isLandscape: true,
+        isMobile: false,
+        width: 1920,
+      },
+      executablePath: await chromium.executablePath(),
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      userDataDir: os.tmpdir(),
     })
 
     try {
