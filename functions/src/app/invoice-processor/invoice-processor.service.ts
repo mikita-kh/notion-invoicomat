@@ -86,7 +86,6 @@ export class InvoiceProcessorService {
     try {
       this.logger.log(`Updating Notion page ${pageId} 'invoice' property with URL ${url}`)
       await this.notionService.updatePageProperty(pageId, 'invoice', { type: 'url', url })
-      await this.notionService.updatePageProperty(pageId, 'status', { type: 'select', select: { name: 'Ready' } })
     } catch (error) {
       this.logger.error(`Error updating Notion page ${pageId} 'invoice' property`, error)
       throw error
