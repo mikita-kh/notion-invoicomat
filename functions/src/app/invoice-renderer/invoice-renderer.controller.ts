@@ -1,4 +1,4 @@
-import { Controller, Get, Logger, Param } from '@nestjs/common'
+import { BadRequestException, Controller, Get, InternalServerErrorException, Logger, Param } from '@nestjs/common'
 import { parsePageId } from 'notion-utils'
 import { NotionService } from '../notion/notion.service'
 import { InvoiceData } from './invoice-renderer.interfaces'
@@ -19,7 +19,7 @@ export class InvoiceRendererController {
 
     if (!pageId) {
       this.logger.error(`Invalid page ID: ${id}`)
-      throw new Error(`Invalid page ID: ${id}`)
+      throw new BadRequestException(`Invalid page ID: ${id}`)
     }
 
     const data = await this.notionService.getNormilizedPageData(pageId)
@@ -28,6 +28,7 @@ export class InvoiceRendererController {
       return await this.invoiceRendererService.renderInvoiceAsHTML(data as InvoiceData)
     } catch (error) {
       this.logger.error('Error rendering invoice:', error)
+      throw new InternalServerErrorException('Failed to render the invoice. Please try again later.')
     }
 
     return data
