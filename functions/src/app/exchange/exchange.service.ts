@@ -17,7 +17,6 @@ export class ExchangeService {
   @Memoize()
   async getRate(currency: Currency, exchangeDate: string): Promise<ExchangeRateResponse> {
     if (currency === this.config.baseCurrency) {
-      this.logger.debug(`Using base currency: ${currency}`)
       return {
         currency,
         no: '',
@@ -25,8 +24,6 @@ export class ExchangeService {
         rate: 1,
       }
     }
-
-    this.logger.debug(`Fetching exchange rate for ${currency} on ${exchangeDate}`)
 
     try {
       const response = await this.exchangeRate.getRate(currency, exchangeDate)

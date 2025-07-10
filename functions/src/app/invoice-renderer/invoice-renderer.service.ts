@@ -10,7 +10,6 @@ import { InvoiceData, InvoiceRendererContext } from './invoice-renderer.interfac
 @Injectable()
 export class InvoiceRendererService {
   private readonly logger = new Logger(InvoiceRendererService.name)
-  #defaultCurrency = 'PLN'
 
   constructor(
     private readonly htmlDocument: HtmlDocumentService,
@@ -37,9 +36,9 @@ export class InvoiceRendererService {
     data: InvoiceData,
   ): Promise<string> {
     try {
-      const preparedData = await this.prepapeInvoiceData(data)
-      this.logger.debug('Rendering invoice with data:', preparedData)
-      const html = await this.htmlDocument.render('invoice', preparedData)
+      const rendererContext = await this.getInvoiceDataRendererContext(data)
+      this.logger.debug('Rendering invoice with data:', rendererContext)
+      const html = await this.htmlDocument.render('invoice', rendererContext)
       this.logger.log('Invoice html rendered successfully')
       return html
     } catch (error) {
@@ -48,20 +47,15 @@ export class InvoiceRendererService {
     }
   }
 
-  private async prepapeInvoiceData(
+  private async getInvoiceDataRendererContext(
     data: InvoiceData,
   ): Promise<InvoiceRendererContext> {
     const [{ currency }] = data.entries
-    const invoiceInForeignCurrency = currency !== this.#defaultCurrency
-    let exchange = { rate: 1, currency, no: '', date: '' }
-
-    if (invoiceInForeignCurrency) {
-      exchange = await this.exchange.getRate(currency as Currency, data.sale_date ?? data.issue_date)
-    }
+    const exchange = await this.exchange.getRate(currency as Currency, data.sale_date ?? data.issue_date)
 
     const context: InvoiceRendererContext = {
       ...data,
-      invoice_in_foreign_currency: invoiceInForeignCurrency,
+      invoice_in_foreign_currency: exchange.rate !== 1,
       currency,
       exchange,
     }
