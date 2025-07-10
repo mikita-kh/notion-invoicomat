@@ -22,15 +22,12 @@ export class InvoiceRendererController {
       throw new BadRequestException(`Invalid page ID: ${id}`)
     }
 
-    const data = await this.notionService.getNormilizedPageData(pageId)
-
     try {
-      return await this.invoiceRendererService.renderInvoiceAsHTML(data as InvoiceData)
+      const data = await this.notionService.getNormilizedPageData<InvoiceData>(pageId)
+      return await this.invoiceRendererService.renderInvoiceAsHTML(data)
     } catch (error) {
       this.logger.error('Error rendering invoice:', error)
       throw new InternalServerErrorException('Failed to render the invoice. Please try again later.')
     }
-
-    return data
   }
 }

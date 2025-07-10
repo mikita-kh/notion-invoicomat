@@ -17,10 +17,10 @@ export class NotionService {
     })
   }
 
-  async getNormilizedPageData(id: string) {
+  async getNormilizedPageData<T extends Record<string, any> = Record<string, any>>(id: string) {
     const { properties } = await this.#retrievePageWithResolvedRelations(id)
 
-    return this.notionTransformerService.transform({
+    return this.notionTransformerService.transform<T>({
       id,
       properties,
     })
