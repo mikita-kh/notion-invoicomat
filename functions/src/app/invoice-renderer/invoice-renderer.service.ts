@@ -9,7 +9,7 @@ import { InvoiceData, InvoiceRendererContext } from './invoice-renderer.interfac
 
 @Injectable()
 export class InvoiceRendererService {
-  #logger = new Logger(InvoiceRendererService.name)
+  private readonly logger = new Logger(InvoiceRendererService.name)
   #defaultCurrency = 'PLN'
 
   constructor(
@@ -23,13 +23,13 @@ export class InvoiceRendererService {
     config: HtmlToPdfOptions = {},
   ): Promise<Buffer> {
     try {
-      this.#logger.debug('Rendering invoice with data:', data)
+      this.logger.debug('Rendering invoice with data:', data)
       const html = await this.htmlDocument.render('invoice', data)
       const pdf = await this.htmlToPdf.generatePdf(html, config)
-      this.#logger.log('Invoice rendered successfully')
+      this.logger.log('Invoice rendered successfully')
       return pdf
     } catch (error) {
-      this.#logger.error('Error rendering invoice:', error)
+      this.logger.error('Error rendering invoice:', error)
       throw error
     }
   }

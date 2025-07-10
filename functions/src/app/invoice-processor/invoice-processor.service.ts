@@ -26,6 +26,7 @@ export class InvoiceProcessorService {
       await this.updateNotionPageStatusProperty(notionPageId, InvoiceStatus.Ready)
     } catch {
       await this.updateNotionPageStatusProperty(notionPageId, InvoiceStatus.Error)
+      throw new Error(`Failed to process invoice for page: ${notionPageId}`)
     }
   }
 
@@ -79,28 +80,32 @@ export class InvoiceProcessorService {
     }
   }
 
+  private readonly notionInvoicePropertyName = 'Invoice'
+
   private async updateNotionPageInvoiceProperty(
     pageId: string,
     url: string,
   ): Promise<void> {
     try {
-      this.logger.log(`Updating Notion page ${pageId} 'invoice' property with URL ${url}`)
-      await this.notionService.updatePageProperty(pageId, 'invoice', { type: 'url', url })
+      this.logger.log(`Updating Notion page ${pageId} '${this.notionInvoicePropertyName}' property with URL ${url}`)
+      await this.notionService.updatePageProperty(pageId, this.notionInvoicePropertyName, { type: 'url', url })
     } catch (error) {
-      this.logger.error(`Error updating Notion page ${pageId} 'invoice' property`, error)
+      this.logger.error(`Error updating Notion page ${pageId} '${this.notionInvoicePropertyName}' property`, error)
       throw error
     }
   }
+
+  private readonly notionInvoiceStatusName = 'Status'
 
   private async updateNotionPageStatusProperty(
     pageId: string,
     status: InvoiceStatus,
   ): Promise<void> {
     try {
-      this.logger.log(`Updating Notion page ${pageId} 'status' property with ${status}`)
-      await this.notionService.updatePageProperty(pageId, 'status', { type: 'select', select: { name: status } })
+      this.logger.log(`Updating Notion page ${pageId} '${this.notionInvoiceStatusName}' property with ${status}`)
+      await this.notionService.updatePageProperty(pageId, this.notionInvoiceStatusName, { type: 'select', select: { name: status } })
     } catch (error) {
-      this.logger.error(`Error updating Notion page ${pageId} 'status' property`, error)
+      this.logger.error(`Error updating Notion page ${pageId} '${this.notionInvoiceStatusName}' property`, error)
     }
   }
 }
