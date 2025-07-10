@@ -1,0 +1,33 @@
+name: Setup and Build
+description: Install dependencies and build the project using pnpm
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
+
+    - name: Install dependencies
+      working-directory: ./functions
+      shell: bash
+      run: |
+        pnpm install --frozen-lockfile
+
+    - name: Lint
+      working-directory: ./functions
+      shell: bash
+      run: | 
+        pnpm run lint
+
+    - name: Build
+      working-directory: ./functions
+      shell: bash
+      run: | 
+        pnpm run build

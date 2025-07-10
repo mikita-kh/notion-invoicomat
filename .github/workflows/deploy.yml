@@ -10,7 +10,7 @@ env:
   NODE_VERSION: '22'
 
 jobs:
-  deploy:
+  build-and-deploy:
     name: Deploy Firebase Functions
     runs-on: ubuntu-latest
     
@@ -23,46 +23,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
-      - name: Get pnpm store directory
-        id: pnpm-store
-        shell: bash
-        run: |
-          STORE_PATH=$(cd functions && pnpm store path --silent)
-          echo "STORE_PATH=$STORE_PATH" >> $GITHUB_ENV
-          echo "path=$STORE_PATH" >> $GITHUB_OUTPUT
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-store.outputs.path }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('functions/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies (including dev)
-        working-directory: ./functions
-        run: |
-          pnpm install --frozen-lockfile
-
-      - name: Lint code
-        working-directory: ./functions
-        run: |
-          pnpm run lint
-
-      - name: Build project
-        working-directory: ./functions
-        run: |
-          pnpm run build
+      - name: Setup and Build
+        uses: ./.github/actions/setup-and-build
 
       - name: Authenticate to Google Cloud
         id: auth
