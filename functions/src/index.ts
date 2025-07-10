@@ -5,6 +5,8 @@ import { onRequest } from 'firebase-functions/v2/https'
 import { createNestApp } from './app/main'
 
 const expressInstance = express()
+const appAwiater = createNestApp(expressInstance)
+
 let app: NestExpressApplication | null = null
 
 export const webhook = onRequest(
@@ -15,7 +17,7 @@ export const webhook = onRequest(
   },
   async (req, res) => {
     try {
-      app ??= await createNestApp(expressInstance)
+      app ??= await appAwiater
     } catch (initError) {
       console.error('🔥 Failed to initialize Nest app:', initError)
       res.status(500).json({

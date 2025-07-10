@@ -32,6 +32,9 @@ importers:
       '@sparticuz/chromium':
         specifier: ^137.0.1
         version: 137.0.1
+      express:
+        specifier: ^5.1.0
+        version: 5.1.0
       firebase-admin:
         specifier: ^13.4.0
         version: 13.4.0
