@@ -18,15 +18,14 @@ export class InvoiceRendererService {
     private readonly htmlToPdf: HtmlToPdfService,
   ) {}
 
-  async renderInvoice(
+  async renderInvoiceAsPDF(
     data: InvoiceData,
     config: HtmlToPdfOptions = {},
   ): Promise<Buffer> {
     try {
-      this.logger.debug('Rendering invoice with data:', data)
-      const html = await this.htmlDocument.render('invoice', data)
+      const html = await this.renderInvoiceAsHTML(data)
       const pdf = await this.htmlToPdf.generatePdf(html, config)
-      this.logger.log('Invoice rendered successfully')
+      this.logger.log('Invoice PDF created successfully')
       return pdf
     } catch (error) {
       this.logger.error('Error rendering invoice:', error)
@@ -34,7 +33,22 @@ export class InvoiceRendererService {
     }
   }
 
-  async prepapeInvoiceData(
+  async renderInvoiceAsHTML(
+    data: InvoiceData,
+  ): Promise<string> {
+    try {
+      const preparedData = await this.prepapeInvoiceData(data)
+      this.logger.debug('Rendering invoice with data:', preparedData)
+      const html = await this.htmlDocument.render('invoice', preparedData)
+      this.logger.log('Invoice html rendered successfully')
+      return html
+    } catch (error) {
+      this.logger.error('Error rendering invoice:', error)
+      throw error
+    }
+  }
+
+  private async prepapeInvoiceData(
     data: InvoiceData,
   ): Promise<InvoiceRendererContext> {
     const [{ currency }] = data.entries

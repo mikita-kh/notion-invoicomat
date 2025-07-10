@@ -45,7 +45,7 @@ export class InvoiceProcessorService {
   private async generateInvoicePdf(invoiceData: InvoiceData): Promise<Buffer> {
     try {
       this.logger.debug('Rendering invoice PDF', { invoiceData })
-      const pdfBuffer = await this.invoiceRenderer.renderInvoice(invoiceData, {
+      const pdfBuffer = await this.invoiceRenderer.renderInvoiceAsPDF(invoiceData, {
         format: 'A4',
         scale: 0.75,
         printBackground: true,
