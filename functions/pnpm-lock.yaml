@@ -41,9 +41,6 @@ importers:
       intl-messageformat:
         specifier: ^10.7.16
         version: 10.7.16
-      lodash.once:
-        specifier: ^4.1.1
-        version: 4.1.1
       notion-utils:
         specifier: ^7.4.2
         version: 7.4.2
@@ -81,9 +78,6 @@ importers:
       '@types/express':
         specifier: ^5.0.3
         version: 5.0.3
-      '@types/lodash.once':
-        specifier: ^4.1.9
-        version: 4.1.9
       '@types/nunjucks':
         specifier: ^3.2.6
         version: 3.2.6
@@ -789,12 +783,6 @@ packages:
 
   '@types/jsonwebtoken@9.0.10':
     resolution: {integrity: sha512-asx5hIG9Qmf/1oStypjanR7iKTv0gXQ1Ov/jfrX6kS/EO0OFni8orbmGCn0672NHR3kXHwpAwR+B368ZGN/2rA==}
-
-  '@types/lodash.once@4.1.9':
-    resolution: {integrity: sha512-nvZ7GYfyZB6CUmXL+7HSXg53rFpc49FsKuRmMiCIGhgJB/yyTip8uHk4mxGyVJOl87dXPlf3qy42WsjOcIrnmg==}
-
-  '@types/lodash@4.17.20':
-    resolution: {integrity: sha512-H3MHACvFUEiujabxhaI/ImO6gUrd8oOurg7LQtS7mbwIXA/cUqWrvBsaeJ23aZEPk1TAYkurjfMbSELfoCXlGA==}
 
   '@types/long@4.0.2':
     resolution: {integrity: sha512-MqTGEo5bj5t157U6fA/BiDynNkn0YknVdh48CMPkTSpFTVmvao5UQmm7uEF6xBEo7qIMAlY/JSleYaE6VOdpaA==}
@@ -4604,12 +4592,6 @@ snapshots:
     dependencies:
       '@types/ms': 2.1.0
       '@types/node': 22.16.2
-
-  '@types/lodash.once@4.1.9':
-    dependencies:
-      '@types/lodash': 4.17.20
-
-  '@types/lodash@4.17.20': {}
 
   '@types/long@4.0.2':
     optional: true
