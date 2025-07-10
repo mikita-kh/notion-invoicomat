@@ -5,7 +5,6 @@ import { ConfigModule } from './config/config.module'
 import { I18nModule } from './i18n/i18n.module'
 import { InvoiceProcessorModule } from './invoice-processor/invoice-processor.module'
 import { InvoiceRendererModule } from './invoice-renderer/invoice-renderer.module'
-import { NotionModule } from './notion/notion.module'
 import { SlackModule } from './slack/slack.module'
 
 @Module({
@@ -13,7 +12,6 @@ import { SlackModule } from './slack/slack.module'
     ConfigModule,
     I18nModule,
     SlackModule,
-    NotionModule,
     InvoiceRendererModule,
     InvoiceProcessorModule,
   ],

@@ -1,25 +1,26 @@
-// get notion page data
-import { Controller, Get, Logger, Param } from '@nestjs/common'
-import { parsePageId } from 'notion-utils'
-import { InvoiceRendererService } from './invoice-renderer/invoice-renderer.service'
-import { NotionService } from './notion/notion.service'
+import process from 'node:process'
+import { Controller, Get, Logger } from '@nestjs/common'
 
-@Controller('notion')
+@Controller()
 export class AppController {
   logger = new Logger(AppController.name)
 
-  constructor(private readonly notionService: NotionService, private readonly invoiceRendererService: InvoiceRendererService) {}
+  @Get('health-check')
+  async healthCheck() {
+    const timestamp = new Date().toISOString()
+    const uptime = process.uptime()
 
-  @Get('page/:id')
-  async getPage(@Param('id') id: string) {
-    const data = await this.notionService.getNormilizedPageData(parsePageId(id)!)
-
-    try {
-      return await this.invoiceRendererService.renderInvoice(data as any)
-    } catch (error) {
-      this.logger.error('Error rendering invoice:', error)
+    return {
+      status: 'ok',
+      timestamp,
+      uptime: `${Math.floor(uptime)}s`,
+      service: 'notion-invoicomat',
+      version: process.env.npm_package_version || '1.0.0',
+      environment: process.env.NODE_ENV || 'development',
+      memory: {
+        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+      },
     }
-
-    return data
   }
 }
