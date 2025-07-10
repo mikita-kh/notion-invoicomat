@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, InternalServerErrorException, Logger, Param } from '@nestjs/common'
+import { BadRequestException, Controller, Get, Header, InternalServerErrorException, Logger, Param } from '@nestjs/common'
 import { parsePageId } from 'notion-utils'
 import { NotionService } from '../notion/notion.service'
 import { InvoiceData } from './invoice-renderer.interfaces'
@@ -14,6 +14,7 @@ export class InvoiceRendererController {
   ) {}
 
   @Get(':id')
+  @Header('Content-Type', 'text/html')
   async getPage(@Param('id') id: string) {
     const pageId = parsePageId(id)
 
