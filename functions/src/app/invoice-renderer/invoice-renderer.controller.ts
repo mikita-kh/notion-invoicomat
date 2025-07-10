@@ -1,4 +1,3 @@
-import { Buffer } from 'node:buffer'
 import { BadRequestException, Controller, Get, InternalServerErrorException, Logger, Param, Query, Res } from '@nestjs/common'
 import { Response } from 'express'
 import { parsePageId } from 'notion-utils'
@@ -20,7 +19,7 @@ export class InvoiceRendererController {
     @Res() res: Response,
     @Param('id') id: string,
     @Query('format') format: 'html' | 'pdf' = 'html',
-  ): Promise<string | Buffer | void> {
+  ): Promise<void> {
     const pageId = parsePageId(id)
 
     if (!pageId) {
@@ -39,9 +38,7 @@ export class InvoiceRendererController {
       if (format === 'html') {
         res.setHeader('Content-Type', 'text/html')
         res.send(await this.invoiceRendererService.renderInvoiceAsHTML(data))
-      }
-
-      if (format === 'pdf') {
+      } else if (format === 'pdf') {
         const pdfBuffer = await this.invoiceRendererService.renderInvoiceAsPDF(data, {
           format: 'A4',
           scale: 0.75,
