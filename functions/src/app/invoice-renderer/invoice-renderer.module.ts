@@ -3,10 +3,13 @@ import { Module } from '@nestjs/common'
 import { ExchangeModule } from '../exchange/exchange.module'
 import { HtmlDocumentModule } from '../html-document/html-document.module'
 import { HtmlToPdfModule } from '../html-to-pdf/html-to-pdf.module'
+import { NotionModule } from '../notion/notion.module'
+import { InvoiceRendererController } from './invoice-renderer.controller'
 import { InvoiceRendererService } from './invoice-renderer.service'
 
 @Module({
   imports: [
+    NotionModule,
     ExchangeModule.forFeature({
       baseCurrency: 'PLN',
       adapter: 'nbp',
@@ -40,5 +43,6 @@ import { InvoiceRendererService } from './invoice-renderer.service'
   ],
   providers: [InvoiceRendererService],
   exports: [InvoiceRendererService],
+  controllers: [InvoiceRendererController],
 })
 export class InvoiceRendererModule {}
