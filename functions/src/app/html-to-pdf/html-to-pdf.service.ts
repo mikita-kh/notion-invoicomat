@@ -1,9 +1,10 @@
 import { Buffer } from 'node:buffer'
 import os from 'node:os'
+import process from 'node:process'
 
 import { Injectable, Logger } from '@nestjs/common'
 import chromium from '@sparticuz/chromium'
-import puppeteer from 'puppeteer-core'
+import puppeteer, { LaunchOptions } from 'puppeteer-core'
 
 export interface HtmlToPdfOptions {
   format?: 'A4' | 'A3' | 'Letter' | 'Legal'
@@ -32,8 +33,9 @@ export class HtmlToPdfService {
   async generatePdf(html: string, options: HtmlToPdfOptions = {}): Promise<Buffer> {
     this.logger.debug('Generating PDF with Puppeteer')
 
-    const browser = await puppeteer.launch({
-      args: [...chromium.args, '--disable-dev-shm-usage'],
+    const isCloudFunctionEnvironment = Boolean(process.env.FUNCTION_TARGET)
+
+    const defaultLaunchOptions: LaunchOptions = {
       defaultViewport: {
         deviceScaleFactor: 1,
         hasTouch: false,
@@ -42,10 +44,17 @@ export class HtmlToPdfService {
         isMobile: false,
         width: 1920,
       },
-      executablePath: await chromium.executablePath(),
       headless: true,
-      userDataDir: os.tmpdir(),
-    })
+    }
+
+    const browser = await (isCloudFunctionEnvironment
+      ? puppeteer.launch({
+          ...defaultLaunchOptions,
+          args: [...chromium.args, '--disable-dev-shm-usage'],
+          executablePath: await chromium.executablePath(),
+          userDataDir: os.tmpdir(),
+        })
+      : puppeteer.launch(defaultLaunchOptions))
 
     try {
       const page = await browser.newPage()
@@ -56,10 +65,10 @@ export class HtmlToPdfService {
         format: options.format || 'A4',
         landscape: options.orientation === 'landscape',
         margin: options.margin || {
-          top: '20px',
-          bottom: '20px',
-          left: '20px',
-          right: '20px',
+          top: '2rem',
+          bottom: '2rem',
+          left: '2rem',
+          right: '2rem',
         },
         printBackground: options.printBackground ?? true,
         displayHeaderFooter: options.displayHeaderFooter ?? false,
