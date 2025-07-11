@@ -18,9 +18,7 @@ export class SlackService {
 
     if (notionPageId) {
       try {
-        const result = await this.invoiceProcessor.process(notionPageId)
-        this.logger.log('Invoice processing completed', result)
-
+        await this.invoiceProcessor.process(notionPageId)
         await this.sendSuccessMessage(notionPageId)
       } catch (error) {
         this.logger.error(`Failed to process invoice for page: ${notionPageId}`, error)

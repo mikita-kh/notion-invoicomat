@@ -6,14 +6,14 @@ import { NotionTransformerService } from './notion-transformer.service'
 
 @Injectable()
 export class NotionService {
-  #client: NotionClient
-  #logger = new Logger(NotionService.name)
+  private readonly client: NotionClient
+  private readonly logger = new Logger(NotionService.name)
 
   constructor(
     private readonly configService: ConfigService,
     private readonly notionTransformerService: NotionTransformerService,
   ) {
-    this.#client = new NotionClient({
+    this.client = new NotionClient({
       auth: this.configService.get<string>('NOTION_API_KEY'),
     })
   }
@@ -32,7 +32,7 @@ export class NotionService {
     const properties: PageObjectResponse['properties'] = {}
 
     if (typeof id !== 'string') {
-      this.#logger.warn(`Invalid page ID: ${id}`)
+      this.logger.warn(`Invalid page ID: ${id}`)
       return { properties, id }
     }
 
@@ -42,7 +42,7 @@ export class NotionService {
 
     visited.set(id, true)
 
-    const page = await this.#client.pages
+    const page = await this.client.pages
       .retrieve({ page_id: id })
 
     if ('properties' in page) {
@@ -67,18 +67,18 @@ export class NotionService {
 
   async updatePageProperty(pageId: string, propertyName: string, propertyValue: NonNullable<UpdatePageParameters['properties']>[string]): Promise<void> {
     try {
-      this.#logger.debug(`Updating page ${pageId} property ${propertyName}`)
+      this.logger.debug(`Updating page ${pageId} property ${propertyName}`)
 
-      await this.#client.pages.update({
+      await this.client.pages.update({
         page_id: pageId,
         properties: {
           [propertyName]: propertyValue,
         },
       })
 
-      this.#logger.log(`Page property updated successfully: ${pageId}.${propertyName}`)
+      this.logger.log(`Page property updated successfully: ${pageId}.${propertyName}`)
     } catch (error) {
-      this.#logger.error(`Error updating page property: ${pageId}.${propertyName}`, error)
+      this.logger.error(`Error updating page property: ${pageId}.${propertyName}`, error)
       throw error
     }
   }

@@ -47,6 +47,9 @@ importers:
       intl-messageformat:
         specifier: ^10.7.16
         version: 10.7.16
+      lru-cache:
+        specifier: ^11.1.0
+        version: 11.1.0
       notion-utils:
         specifier: ^7.4.2
         version: 7.4.2
