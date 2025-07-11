@@ -35,6 +35,15 @@ export class HtmlToPdfService {
 
     const isCloudFunctionEnvironment = Boolean(process.env.FUNCTION_TARGET)
 
+    const executablePath = await (isCloudFunctionEnvironment
+      ? chromium.executablePath()
+      : puppeteer.executablePath())
+
+    if (!executablePath) {
+      this.logger.error('Puppeteer executable path is not defined')
+      throw new Error('Puppeteer executable path is not defined')
+    }
+
     const defaultLaunchOptions: LaunchOptions = {
       defaultViewport: {
         deviceScaleFactor: 1,
@@ -45,13 +54,13 @@ export class HtmlToPdfService {
         width: 1920,
       },
       headless: true,
+      executablePath,
     }
 
     const browser = await (isCloudFunctionEnvironment
       ? puppeteer.launch({
           ...defaultLaunchOptions,
           args: [...chromium.args, '--disable-dev-shm-usage'],
-          executablePath: await chromium.executablePath(),
           userDataDir: os.tmpdir(),
         })
       : puppeteer.launch(defaultLaunchOptions))

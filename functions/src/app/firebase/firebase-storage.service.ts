@@ -1,5 +1,6 @@
 import { Buffer } from 'node:buffer'
 
+import { Bucket } from '@google-cloud/storage'
 import { Injectable, Logger } from '@nestjs/common'
 import { FirebaseAdminService } from './firebase-admin.service'
 
@@ -7,10 +8,9 @@ import { FirebaseAdminService } from './firebase-admin.service'
 export class FirebaseStorageService {
   private readonly logger = new Logger(FirebaseStorageService.name)
 
-  constructor(private readonly firebaseAdmin: FirebaseAdminService) {
-  }
+  constructor(private readonly firebaseAdmin: FirebaseAdminService) {}
 
-  get #bucket() {
+  private get bucket(): Bucket {
     return this.firebaseAdmin.storage.bucket()
   }
 
@@ -22,7 +22,7 @@ export class FirebaseStorageService {
     try {
       this.logger.debug(`Uploading file: ${fileName}`)
 
-      const file = this.#bucket.file(fileName)
+      const file = this.bucket.file(fileName)
 
       await file.save(buffer, { contentType })
 
@@ -42,7 +42,7 @@ export class FirebaseStorageService {
     try {
       this.logger.debug(`Deleting file: ${fileName}`)
 
-      const file = this.#bucket.file(fileName)
+      const file = this.bucket.file(fileName)
       await file.delete()
 
       this.logger.log(`File deleted successfully: ${fileName}`)
@@ -54,7 +54,7 @@ export class FirebaseStorageService {
 
   async exists(fileName: string): Promise<boolean> {
     try {
-      const file = this.#bucket.file(fileName)
+      const file = this.bucket.file(fileName)
       const [exists] = await file.exists()
       return exists
     } catch (error) {

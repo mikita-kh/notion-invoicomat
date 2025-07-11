@@ -11,7 +11,7 @@ let app: NestExpressApplication | null = null
 
 export const webhook = onRequest(
   {
-    secrets: ['NOTION_API_KEY', 'SLACK_WEBHOOK_URL'],
+    secrets: ['NOTION_API_KEY', 'SLACK_WEBHOOK_URL', 'SLACK_NOTION_BOT_ID'],
     memory: '2GiB',
     timeoutSeconds: 30,
   },

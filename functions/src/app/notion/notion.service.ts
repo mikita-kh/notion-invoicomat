@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { Client as NotionClient, PageObjectResponse } from '@notionhq/client'
+import { Client as NotionClient, PageObjectResponse, UpdatePageParameters } from '@notionhq/client'
 import { Memoize } from '../shared/decorators/memoize.decorator'
 import { NotionTransformerService } from './notion-transformer.service'
 
@@ -65,7 +65,7 @@ export class NotionService {
     return { id, properties }
   }
 
-  async updatePageProperty(pageId: string, propertyName: string, propertyValue: any): Promise<void> {
+  async updatePageProperty(pageId: string, propertyName: string, propertyValue: NonNullable<UpdatePageParameters['properties']>[string]): Promise<void> {
     try {
       this.#logger.debug(`Updating page ${pageId} property ${propertyName}`)
 
