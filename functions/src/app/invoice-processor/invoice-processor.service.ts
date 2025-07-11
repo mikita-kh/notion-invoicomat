@@ -21,8 +21,9 @@ export class InvoiceProcessorService {
       await this.updateNotionPageStatusProperty(notionPageId, InvoiceStatus.InProgress)
       const invoiceData = await this.receiveInvoiceData(notionPageId)
       const pdfBuffer = await this.generateInvoicePdf(invoiceData)
-      const fileUrl = await this.saveInvoicePdfToFirebase(pdfBuffer, invoiceData)
-      await this.updateNotionPageInvoiceProperty(notionPageId, fileUrl)
+      const [bucketRoot, folderName, fileName] = this.getBucketPath(invoiceData)
+      const fileUrl = await this.saveInvoicePdfToFirebase(pdfBuffer, [bucketRoot, folderName, fileName])
+      await this.updateNotionPageInvoiceProperty(notionPageId, { url: fileUrl, name: fileName })
       await this.updateNotionPageStatusProperty(notionPageId, InvoiceStatus.Ready)
     } catch {
       await this.updateNotionPageStatusProperty(notionPageId, InvoiceStatus.Error)
@@ -58,24 +59,29 @@ export class InvoiceProcessorService {
     }
   }
 
+  private bucketInvoicesRoot = 'invoices'
+
+  private getBucketPath(invoiceData: InvoiceData): [string, string, string] {
+    const folderName = invoiceData.issue_date.split('-').slice(0, 2).join('-')
+    const fileName = `${invoiceData.client[0].id}-${invoiceData.invoice_number}.pdf`
+    return [this.bucketInvoicesRoot, folderName, fileName.replaceAll('/', '-')]
+  }
+
   private async saveInvoicePdfToFirebase(
     pdfBuffer: Buffer,
-    invoiceData: InvoiceData,
+    bucketPath: string[],
   ): Promise<string> {
     try {
       this.logger.log('Saving invoice PDF to Firebase')
-      const folderName = invoiceData.issue_date.split('-').slice(0, 2).join('-')
-      const fileName = `${invoiceData.client[0].id}-${invoiceData.invoice_number}.pdf`
-      const bucketPath = `invoices/${folderName}/${fileName}`
       const fileUrl = await this.firebaseStorage.save(
         pdfBuffer,
-        bucketPath,
+        bucketPath.join('/'),
         'application/pdf',
       )
-      this.logger.debug('Invoice PDF uploaded to Firebase Storage', { fileName, fileUrl })
+      this.logger.debug('Invoice PDF uploaded to Firebase Storage', { fileName: bucketPath.at(-1), fileUrl })
       return fileUrl
     } catch (error) {
-      this.logger.error(`Error saving invoice PDF to Firebase for page: ${invoiceData.id}`, error)
+      this.logger.error(`Error saving invoice PDF to Firebase: ${bucketPath.join('/')}`, error)
       throw error
     }
   }
@@ -84,11 +90,11 @@ export class InvoiceProcessorService {
 
   private async updateNotionPageInvoiceProperty(
     pageId: string,
-    url: string,
+    { url, name }: { url: string, name: string },
   ): Promise<void> {
     try {
       this.logger.log(`Updating Notion page ${pageId} '${this.notionInvoicePropertyName}' property with URL ${url}`)
-      await this.notionService.updatePageProperty(pageId, this.notionInvoicePropertyName, { type: 'url', url })
+      await this.notionService.updatePageProperty(pageId, this.notionInvoicePropertyName, { type: 'files', files: [{ name, external: { url } }] })
     } catch (error) {
       this.logger.error(`Error updating Notion page ${pageId} '${this.notionInvoicePropertyName}' property`, error)
       throw error
@@ -103,7 +109,7 @@ export class InvoiceProcessorService {
   ): Promise<void> {
     try {
       this.logger.log(`Updating Notion page ${pageId} '${this.notionInvoiceStatusName}' property with ${status}`)
-      await this.notionService.updatePageProperty(pageId, this.notionInvoiceStatusName, { type: 'select', select: { name: status } })
+      await this.notionService.updatePageProperty(pageId, this.notionInvoiceStatusName, { type: 'status', status: { name: status } })
     } catch (error) {
       this.logger.error(`Error updating Notion page ${pageId} '${this.notionInvoiceStatusName}' property`, error)
     }

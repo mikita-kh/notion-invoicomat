@@ -1,7 +1,7 @@
-import { Body, Controller, Logger, Post, UseInterceptors } from '@nestjs/common'
+import { Body, Controller, Logger, Post, UseGuards } from '@nestjs/common'
 import { SlackEvent } from '@slack/types'
+import { SlackGuard } from './slack.guard'
 import { SlackService } from './slack.service'
-import { SlackUrlVerificationInterceptor } from './slack.url-verification.interceptor'
 
 @Controller('slack')
 export class SlackController {
@@ -10,7 +10,7 @@ export class SlackController {
   constructor(private readonly slackService: SlackService) {}
 
   @Post('events')
-  @UseInterceptors(SlackUrlVerificationInterceptor)
+  @UseGuards(SlackGuard(config => config.get<string>('SLACK_NOTION_BOT_ID')!))
   async handleSlackEvent(@Body('event') data: SlackEvent) {
     this.logger.debug('Received Slack event', data)
     // Handle other Slack events

@@ -46,10 +46,6 @@ export class SlackService {
     return undefined
   }
 
-  static isUrlVerification(data: any): data is { type: 'url_verification', challenge: string } {
-    return data && data.type === 'url_verification' && typeof data.challenge === 'string'
-  }
-
   private async sendSuccessMessage(notionPageId: string): Promise<void> {
     const message = {
       text: `✅ Invoice Generated Successfully`,
@@ -92,5 +88,9 @@ export class SlackService {
     }
 
     await this.slackNotification.sendMessage(message)
+  }
+
+  static isUrlVerification(data: any): data is { type: 'url_verification', challenge: string } {
+    return data && data.type === 'url_verification' && typeof data.challenge === 'string'
   }
 }
