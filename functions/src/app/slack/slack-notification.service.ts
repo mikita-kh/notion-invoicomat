@@ -29,9 +29,11 @@ export class SlackNotificationService {
         body: JSON.stringify(message),
       })
 
-      if (response.ok) {
-        this.logger.log('Slack notification sent successfully')
+      if (!response.ok) {
+        throw new Error(response.statusText)
       }
+
+      this.logger.log('Slack notification sent successfully')
     } catch (error) {
       this.logger.error('Failed to send Slack notification', error)
     }

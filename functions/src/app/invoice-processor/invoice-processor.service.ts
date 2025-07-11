@@ -45,13 +45,12 @@ export class InvoiceProcessorService {
 
   private async generateInvoicePdf(invoiceData: InvoiceData): Promise<Buffer> {
     try {
-      this.logger.debug('Rendering invoice PDF', { invoiceData })
       const pdfBuffer = await this.invoiceRenderer.renderInvoiceAsPDF(invoiceData, {
         format: 'A4',
         scale: 0.75,
         printBackground: true,
       })
-      this.logger.debug('Invoice PDF rendered successfully')
+      this.logger.log('Invoice PDF rendered successfully')
       return pdfBuffer
     } catch (error) {
       this.logger.error('Error rendering invoice PDF', error)
