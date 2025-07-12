@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Inject, Injectable, mixin } from '@nestjs/common'
+import { CanActivate, ExecutionContext, HttpException, HttpStatus, Inject, Injectable, Logger, mixin } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { SlackEvent } from '@slack/types'
 import { Request } from 'express'
@@ -9,6 +9,7 @@ type BotIdSource = PrimitiveBotIdSource | ((config: ConfigService) => PrimitiveB
 export function SlackGuard(botIdSource: BotIdSource) {
   @Injectable()
   class SlackGuardMixin implements CanActivate {
+    private readonly logger = new Logger(SlackGuardMixin.name)
     constructor(@Inject(ConfigService) private readonly config: ConfigService) {}
 
     canActivate(context: ExecutionContext): boolean {
@@ -32,7 +33,9 @@ export function SlackGuard(botIdSource: BotIdSource) {
         }
       }
 
-      return false
+      this.logger.debug('Ignored Slack event', body)
+      // Respond with 204 No Content for events not coming from the expected Slack bot(s)
+      throw new HttpException('Ignored Slack event', HttpStatus.NO_CONTENT)
     }
   }
 
