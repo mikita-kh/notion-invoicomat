@@ -20,20 +20,25 @@ export class SlackNotificationService {
         this.logger.warn('Slack webhook URL is not configured, skipping notification')
         return
       }
+      const debugId = new Date().toLocaleString()
+
+      this.logger.debug(`[${debugId}] Sending Slack message`, message)
 
       const response = await fetch(webhookUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(message),
       })
 
+      const responseText = await response.text()
+
+      this.logger.debug(`[${debugId}] Slack response: ${response.status} ${responseText}`)
+
       if (!response.ok) {
-        throw new Error(response.statusText)
+        throw new Error(responseText)
       }
 
-      this.logger.log('Slack notification sent successfully')
+      this.logger.log(`[${debugId}] Slack notification sent successfully`)
     } catch (error) {
       this.logger.error('Failed to send Slack notification', error)
     }
