@@ -80,65 +80,83 @@
 	</div>
 </div>
 
-
-<table class="border-collapse mb-8 numeric-tabular table table-auto w-full my-8">
-	<thead>
-		<tr class="text-white">
-			<th class="font-normal text-left bg-gradient-to-b from-gray-600 to-gray-400">{{ _("No.", primaryLanguage) }}{% if secondaryLanguage %}&nbsp;/ {{ _("No.", secondaryLanguage) }}{% endif %}</th>
-			<th class="font-normal text-left bg-gradient-to-b from-gray-600 to-gray-400">{{ _("Item", primaryLanguage) }}{% if secondaryLanguage %}&nbsp;/ {{ _("Item", secondaryLanguage) }}{% endif %}</th>
-			<th class="font-normal text-right bg-gradient-to-b from-gray-600 to-gray-400">{{ _("Qty", primaryLanguage) }}{% if secondaryLanguage %}&nbsp;/ {{ _("Qty", secondaryLanguage) }}{% endif %}</th>
-			<th class="font-normal text-right bg-gradient-to-b from-gray-600 to-gray-400">{{ _("Unit net price", primaryLanguage) }}{% if secondaryLanguage %}&nbsp;/ {{ _("Unit net price", secondaryLanguage) }}{% endif %}</th>
-			<th class="font-normal text-right bg-gradient-to-b from-gray-600 to-gray-400">{{ _("Total net", primaryLanguage) }}{% if secondaryLanguage %}&nbsp;/ {{ _("Total net", secondaryLanguage) }}{% endif %}</th>
-			<th class="font-normal text-right bg-gradient-to-b from-gray-600 to-gray-400">{{ _("VAT", primaryLanguage) }}{% if secondaryLanguage %}&nbsp;/ {{ _("VAT", secondaryLanguage) }}{% endif %}</th>
-			<th class="font-normal text-right bg-gradient-to-b from-gray-600 to-gray-400">{{ _("VAT amount", primaryLanguage) }}{% if secondaryLanguage %}&nbsp;/ {{ _("VAT amount", secondaryLanguage) }}{% endif %}</th>
-			<th class="font-normal text-right bg-gradient-to-b from-gray-600 to-gray-400">{{ _("Total gross", primaryLanguage) }}{% if secondaryLanguage %}&nbsp;/ {{ _("Total gross", secondaryLanguage) }}{% endif %}</th>
+{% set separator = secondaryLanguage and '&nbsp;/' or '' %}
+<table class="border-collapse mb-8 tabular-nums table table-auto w-full my-8">
+	<thead class="text-xs uppercase whitespace-nowrap">
+		<tr class="bg-gray-100 align-bottom">
+			<th class="text-center px-4 pt-2">{{ _("No.", primaryLanguage) }}{{ separator | safe }}</th>
+			<th class="text-left px-4 pt-2">{{ _("Item", primaryLanguage) }}{{ separator | safe }}</th>
+			<th class="text-right px-4 pt-2">{{ _("Qty", primaryLanguage) }}{{ separator | safe }}</th>
+			<th class="text-right px-4 pt-2">{{ _("Unit net price", primaryLanguage) }}{{ separator | safe }}</th>
+			<th class="text-right px-4 pt-2">{{ _("Total net", primaryLanguage) }}{{ separator | safe }}</th>
+			<th class="text-right px-4 pt-2">{{ _("VAT", primaryLanguage) }}{{ separator | safe }}</th>
+			<th class="text-right px-4 pt-2">{{ _("VAT amount", primaryLanguage) }}{{ separator | safe }}</th>
+			<th class="text-right px-4 pt-2">{{ _("Total gross", primaryLanguage) }}{{ separator | safe }}</th>
 		</tr>
+		{% if secondaryLanguage %}
+		<tr class="bg-gray-100 align-top">
+			<th class="text-center border-b border-gray-300 px-4 pb-2">{{ _("No.", secondaryLanguage) }}</th>
+			<th class="text-left border-b border-gray-300 px-4 pb-2">{{ _("Item", secondaryLanguage) }}</th>
+			<th class="text-right border-b border-gray-300 px-4 pb-2">{{ _("Qty", secondaryLanguage) }}</th>
+			<th class="text-right border-b border-gray-300 px-4 pb-2">{{ _("Unit net price", secondaryLanguage) }}</th>
+			<th class="text-right border-b border-gray-300 px-4 pb-2">{{ _("Total net", secondaryLanguage) }}</th>
+			<th class="text-right border-b border-gray-300 px-4 pb-2">{{ _("VAT", secondaryLanguage) }}</th>
+			<th class="text-right border-b border-gray-300 px-4 pb-2">{{ _("VAT amount", secondaryLanguage) }}</th>
+			<th class="text-right border-b border-gray-300 px-4 pb-2">{{ _("Total gross", secondaryLanguage) }}</th>
+		</tr>
+		{% endif %}
 	</thead>
 	<tbody>
 		{% for entry in entries %}
 		<tr>
-			<td class="text-center">{{loop.index}}</td>
-			<td class="text-left">{{entry.name}}</td>
-			<td class="text-center">
+			<td class="text-center border-b border-gray-300 px-4 py-2">{{loop.index}}</td>
+			<td class="text-left border-b border-gray-300 px-4 py-2">{{entry.name}}</td>
+			<td class="text-right border-b border-gray-300 px-4 py-2">
 				{{entry.quantity}}{% if entry.unit == "hours"%}&nbsp;{{ _("hours", primaryLanguage) }}{% endif %}
 			</td>
-			<td class="text-right">{{entry.net_price | format_number}}</td>
-			<td class="text-right">{{entry.total_net | format_number}}</td>
-			<td class="text-right">{{entry.vat}}</td>
-			<td class="text-right">{{entry.vat_amount | format_number}}</td>
-			<td class="text-right">{{entry.total_gross | format_number}}</td>
+			<td class="text-right border-b border-gray-300 px-4 py-2">{{entry.net_price | format_number}}</td>
+			<td class="text-right border-b border-gray-300 px-4 py-2">{{entry.total_net | format_number}}</td>
+			<td class="text-right border-b border-gray-300 px-4 py-2">{{entry.vat}}</td>
+			<td class="text-right border-b border-gray-300 px-4 py-2">{{entry.vat_amount | format_number}}</td>
+			<td class="text-right border-b border-gray-300 px-4 py-2">{{entry.total_gross | format_number}}</td>
 		</tr>
 		{% endfor %}
 	</tbody>
 	<tfoot>
-		<tr>
-			<td colSpan="2" style="border:0">&nbsp;</td>
-			<td colSpan="2" class="text-right text-white bg-gradient-to-b from-gray-600 to-gray-400">
-				<div class="flex flex-col">
-					<span>{{ _("Tax rate", primaryLanguage) }}{% if secondaryLanguage %} / {{ _("Tax rate", secondaryLanguage) }}{% endif %}</span>
-					<span>{{ _("Total", primaryLanguage) }}{% if secondaryLanguage %} / {{ _("Total", secondaryLanguage) }}{% endif %}</span>
-				</div>
+		<tr class="align-bottom">
+			<td colSpan="2" class="px-4 pt-2">&nbsp;</td>
+			<td colSpan="2" class="text-right px-4 pt-2">
+				{{ _("Tax rate", primaryLanguage) }}{% if secondaryLanguage %} / {{ _("Tax rate", secondaryLanguage) }}{% endif %}
 			</td>
-			<td class="text-right">
-				<div class="flex flex-col">
-					<span>{{total_net | format_number}}</span>
-					<span>{{total_net | format_number}}</span>
-				</div>
+			<td class="text-right px-4 pt-2">
+				{{total_net | format_number}}
 			</td>
-			<td class="text-right" valign=top>
+			<td class="text-right px-4 pt-2 align-top">
 				{{entries[0].vat}}
 			</td>
-			<td class="text-right">
-				<div class="flex flex-col">
-					<span>{{vat_amount | format_number}}</span>
-					<span>{{vat_amount | format_number}}</span>
-				</div>
+			<td class="text-right px-4 pt-2">
+				{{vat_amount | format_number}}
 			</td>
-			<td class="text-right">
-				<div class="flex flex-col">
-					<span>{{total_gross | format_number}}</span>
-					<span>{{total_gross | format_number}}</span>
-				</div>
+			<td class="text-right px-4 pt-2">
+				{{total_gross | format_number}}
+			</td>
+		</tr>
+		<tr class="align-top">
+			<td colSpan="2" class="px-4 pb-2">&nbsp;</td>
+			<td colSpan="2" class="text-right bg-gray-100 px-4 py-2 font-semibold">
+				{{ _("Total", primaryLanguage) }}{% if secondaryLanguage %} / {{ _("Total", secondaryLanguage) }}{% endif %}
+			</td>
+			<td class="text-right px-4 pb-2">
+				<span>{{total_net | format_number}}</span>
+			</td>
+			<td class="text-right px-4 pb-2">
+				&nbsp;
+			</td>
+			<td class="text-right px-4 pb-2">
+				{{vat_amount | format_number}}
+			</td>
+			<td class="text-right px-4 pb-2">
+				{{total_gross | format_number}}
 			</td>
 		</tr>
 	</tfoot>
