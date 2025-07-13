@@ -33,13 +33,13 @@ export class InvoiceRendererController {
     }
 
     try {
-      const data = await this.notionService.getNormilizedPageData<InvoiceData>(pageId)
-
+      const data = await this.notionService.getNormalizedPageData<InvoiceData>(pageId)
+      const context = await this.invoiceRendererService.prepareRendererContext(data)
       if (format === 'html') {
         res.setHeader('Content-Type', 'text/html')
-        res.send(await this.invoiceRendererService.renderInvoiceAsHTML(data))
+        res.send(await this.invoiceRendererService.renderInvoiceAsHTML(context))
       } else if (format === 'pdf') {
-        const pdfBuffer = await this.invoiceRendererService.renderInvoiceAsPDF(data, {
+        const pdfBuffer = await this.invoiceRendererService.renderInvoiceAsPDF(context, {
           format: 'A4',
           scale: 0.75,
           printBackground: true,

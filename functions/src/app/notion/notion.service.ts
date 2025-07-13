@@ -19,7 +19,7 @@ export class NotionService {
   }
 
   @Memoize(5 * 60 * 1000) // Cache for 5 minutes
-  async getNormilizedPageData<T extends Record<string, any> = Record<string, any>>(id: string) {
+  async getNormalizedPageData<T extends Record<string, any> = Record<string, any>>(id: string) {
     const { properties } = await this.#retrievePageWithResolvedRelations(id)
 
     return this.notionTransformerService.transform<T>({
@@ -28,7 +28,7 @@ export class NotionService {
     })
   }
 
-  async #retrievePageWithResolvedRelations(id: string, visited = new Map<string, true>()) {
+  async #retrievePageWithResolvedRelations(id: string, resolved = new Map<string, true>()) {
     const properties: PageObjectResponse['properties'] = {}
 
     if (typeof id !== 'string') {
@@ -36,11 +36,11 @@ export class NotionService {
       return { properties, id }
     }
 
-    if (visited.has(id)) {
+    if (resolved.has(id)) {
       return { properties, id }
     }
 
-    visited.set(id, true)
+    resolved.set(id, true)
 
     const page = await this.client.pages
       .retrieve({ page_id: id })
@@ -53,7 +53,7 @@ export class NotionService {
             relation: await Promise.all(
               propertyValue.relation
                 .filter(relationItem => Boolean(relationItem.id))
-                .map(relationItem => this.#retrievePageWithResolvedRelations(relationItem.id, visited)),
+                .map(relationItem => this.#retrievePageWithResolvedRelations(relationItem.id, resolved)),
             ),
           }
         } else {
