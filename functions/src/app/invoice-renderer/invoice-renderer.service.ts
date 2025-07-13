@@ -18,11 +18,11 @@ export class InvoiceRendererService {
   ) {}
 
   async renderInvoiceAsPDF(
-    data: InvoiceData,
+    rendererContext: InvoiceRendererContext,
     config: HtmlToPdfOptions = {},
   ): Promise<Buffer> {
     try {
-      const html = await this.renderInvoiceAsHTML(data)
+      const html = await this.renderInvoiceAsHTML(rendererContext)
       const pdf = await this.htmlToPdf.generatePdf(html, config)
       this.logger.log('Invoice PDF created successfully')
       return pdf
@@ -33,10 +33,9 @@ export class InvoiceRendererService {
   }
 
   async renderInvoiceAsHTML(
-    data: InvoiceData,
+    rendererContext: InvoiceRendererContext,
   ): Promise<string> {
     try {
-      const rendererContext = await this.getInvoiceDataRendererContext(data)
       this.logger.debug('Rendering invoice with data:', rendererContext)
       const html = await this.htmlDocument.render('invoice', rendererContext)
       this.logger.log('Invoice html rendered successfully')
@@ -47,7 +46,7 @@ export class InvoiceRendererService {
     }
   }
 
-  private async getInvoiceDataRendererContext(
+  async prepareRendererContext(
     data: InvoiceData,
   ): Promise<InvoiceRendererContext> {
     const [{ currency }] = data.entries
