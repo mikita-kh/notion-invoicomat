@@ -1,102 +1,49 @@
 import { Buffer } from 'node:buffer'
-import os from 'node:os'
-import process from 'node:process'
-
 import { Injectable, Logger } from '@nestjs/common'
-import chromium from '@sparticuz/chromium'
-import puppeteer, { LaunchOptions } from 'puppeteer-core'
+import { PdfGenerationOptions, PdfGenerator } from './pdf-generators/pdf-generator.adapter'
 
-export interface HtmlToPdfOptions {
-  format?: 'A4' | 'A3' | 'Letter' | 'Legal'
-  orientation?: 'portrait' | 'landscape'
-  margin?: {
-    top?: string
-    bottom?: string
-    left?: string
-    right?: string
-  }
-  printBackground?: boolean
-  displayHeaderFooter?: boolean
-  headerTemplate?: string
-  footerTemplate?: string
-  scale?: number
-  width?: string
-  height?: string
-  pageRanges?: string
-  preferCSSPageSize?: boolean
-}
+export interface HtmlToPdfOptions extends PdfGenerationOptions {}
 
 @Injectable()
 export class HtmlToPdfService {
   private readonly logger = new Logger(HtmlToPdfService.name)
 
-  async generatePdf(html: string, options: HtmlToPdfOptions = {}): Promise<Buffer> {
-    this.logger.debug('Generating PDF with Puppeteer')
+  static defaultOptions: Required<HtmlToPdfOptions> = {
+    format: 'A4',
+    landscape: false,
+    displayHeaderFooter: false,
+    margin: {
+      top: '0.75in',
+      right: '0.75in',
+      bottom: '0.75in',
+      left: '0.75in',
+    },
+    scale: 0.75,
+  }
 
-    const isCloudFunctionEnvironment = Boolean(process.env.FUNCTION_TARGET)
+  constructor(private readonly pdfGenerator: PdfGenerator) {}
 
-    const executablePath = await (isCloudFunctionEnvironment
-      ? chromium.executablePath()
-      : puppeteer.executablePath())
-
-    if (!executablePath) {
-      this.logger.error('Puppeteer executable path is not defined')
-      throw new Error('Puppeteer executable path is not defined')
-    }
-
-    const defaultLaunchOptions: LaunchOptions = {
-      defaultViewport: {
-        deviceScaleFactor: 1,
-        hasTouch: false,
-        height: 1080,
-        isLandscape: true,
-        isMobile: false,
-        width: 1920,
-      },
-      headless: true,
-      executablePath,
-    }
-
-    const browser = await (isCloudFunctionEnvironment
-      ? puppeteer.launch({
-          ...defaultLaunchOptions,
-          args: [...chromium.args, '--disable-dev-shm-usage'],
-          userDataDir: os.tmpdir(),
-        })
-      : puppeteer.launch(defaultLaunchOptions))
-
+  async generatePdf(html: string, {
+    format = HtmlToPdfService.defaultOptions.format,
+    landscape = HtmlToPdfService.defaultOptions.landscape,
+    displayHeaderFooter = HtmlToPdfService.defaultOptions.displayHeaderFooter,
+    margin = HtmlToPdfService.defaultOptions.margin,
+    scale = HtmlToPdfService.defaultOptions.scale,
+  }: HtmlToPdfOptions = {}): Promise<Buffer> {
     try {
-      const page = await browser.newPage()
-
-      await page.setContent(html, { waitUntil: 'networkidle0' })
-
-      const pdfBuffer = await page.pdf({
-        format: options.format || 'A4',
-        landscape: options.orientation === 'landscape',
-        margin: options.margin || {
-          top: '32px',
-          bottom: '32px',
-          left: '32px',
-          right: '32px',
-        },
-        printBackground: options.printBackground ?? true,
-        displayHeaderFooter: options.displayHeaderFooter ?? false,
-        headerTemplate: options.headerTemplate || '',
-        footerTemplate: options.footerTemplate || '',
-        scale: options.scale || 1,
-        width: options.width,
-        height: options.height,
-        pageRanges: options.pageRanges,
-        preferCSSPageSize: options.preferCSSPageSize ?? false,
+      this.logger.debug(`Starting PDF generation to ${this.pdfGenerator.constructor.name} provider`, { format, landscape, displayHeaderFooter, margin, scale })
+      const pdf = await this.pdfGenerator.generatePdf(html, {
+        format,
+        landscape,
+        displayHeaderFooter,
+        margin,
+        scale,
       })
-
-      this.logger.debug('PDF generated successfully')
-      return Buffer.from(pdfBuffer)
+      this.logger.debug('PDF generated successfully', { buffer: { size: pdf.length } })
+      return pdf
     } catch (error) {
-      this.logger.error('Error generating PDF:', error)
+      this.logger.error('Failed to generate PDF', error)
       throw error
-    } finally {
-      await browser.close()
     }
   }
 }
