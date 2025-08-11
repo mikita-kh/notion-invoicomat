@@ -104,7 +104,7 @@ export class SlackService {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `❌ *Invoice Generation Failed*\n\n� Page: <${notionPageUrl}|View in Notion>\n�🚨 Error: \`${errorMessage}\`\n⏰ Failed at: ${new Date().toISOString()}`,
+            text: `❌ *Invoice Generation Failed*\n\n Page: <${notionPageUrl}|View in Notion>\n🚨 Error: \`${errorMessage}\`\n⏰ Failed at: ${new Date().toISOString()}`,
           },
         },
         {
