@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Client as NotionClient, PageObjectResponse, UpdatePageParameters } from '@notionhq/client'
+import { Configuration } from '../config/configuration'
 import { Memoize } from '../shared/decorators/memoize.decorator'
 import { NotionTransformerService } from './notion-transformer.service'
 
@@ -10,11 +11,11 @@ export class NotionService {
   private readonly logger = new Logger(NotionService.name)
 
   constructor(
-    private readonly configService: ConfigService,
+    private readonly configService: ConfigService<Configuration>,
     private readonly notionTransformerService: NotionTransformerService,
   ) {
     this.client = new NotionClient({
-      auth: this.configService.get<string>('NOTION_API_KEY'),
+      auth: this.configService.getOrThrow('NOTION_API_KEY'),
     })
   }
 

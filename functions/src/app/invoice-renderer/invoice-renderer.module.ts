@@ -14,7 +14,7 @@ import { InvoiceRendererService } from './invoice-renderer.service'
       baseCurrency: 'PLN',
       adapter: 'nbp',
     }),
-    HtmlToPdfModule,
+    HtmlToPdfModule.forFeature({ pdfGenerator: 'adobe' }),
     HtmlDocumentModule.forFeature({
       templateEngine: {
         type: 'nunjucks',

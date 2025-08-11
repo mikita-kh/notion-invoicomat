@@ -40,9 +40,9 @@ export class InvoiceRendererController {
         res.send(await this.invoiceRendererService.renderInvoiceAsHTML(context))
       } else if (format === 'pdf') {
         const pdfBuffer = await this.invoiceRendererService.renderInvoiceAsPDF(context, {
-          format: 'A4',
-          scale: 0.75,
-          printBackground: true,
+          // format: 'A4',
+          // scale: 0.75,
+          // printBackground: true,
         })
 
         res.setHeader('Content-Type', 'application/pdf')

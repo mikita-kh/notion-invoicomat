@@ -43,12 +43,12 @@ export class InvoiceProcessorService {
     return this.prepareRendererContext(invoiceData)
   }
 
-  private async generatePdf(context: InvoiceRendererContext): Promise<Buffer> {
+  private async generatePdf(context: InvoiceRendererContext) {
     this.logger.log('Generating PDF for invoice')
     return this.invoiceRenderer.renderInvoiceAsPDF(context, {
-      format: 'A4',
-      scale: 0.75,
-      printBackground: true,
+      // format: 'A4',
+      // scale: 0.75,
+      // printBackground: true,
     })
   }
 
