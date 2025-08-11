@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer'
 import { Readable } from 'node:stream'
 import {
+  Asset,
   HTMLToPDFJob,
   HTMLToPDFParams,
   HTMLToPDFResult,
@@ -164,7 +165,7 @@ export class AdobePdfGenerator extends PdfGenerator {
     }
   }
 
-  private createJob(inputAsset: any, options: Required<PdfGenerationOptions>): HTMLToPDFJob {
+  private createJob(inputAsset: Asset, options: Required<PdfGenerationOptions>): HTMLToPDFJob {
     return new HTMLToPDFJob({
       inputAsset,
       params: this.buildAdobeParams(options),
@@ -173,7 +174,7 @@ export class AdobePdfGenerator extends PdfGenerator {
 
   private buildAdobeParams(options: Required<PdfGenerationOptions>): HTMLToPDFParams {
     const format = options.format.toUpperCase() as SupportedFormat
-    let pageSize = AdobePdfGenerator.PAGE_SIZES[format] || AdobePdfGenerator.PAGE_SIZES.A4
+    let pageSize = AdobePdfGenerator.PAGE_SIZES[format]
 
     if (options.landscape) {
       pageSize = [pageSize[1], pageSize[0]]
