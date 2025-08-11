@@ -36,7 +36,7 @@
     "notion-utils": "^7.4.3",
     "nunjucks": "^3.2.4",
     "postcss": "^8.5.6",
-    "puppeteer-core": "^24.16.0",
+    "puppeteer-core": "^24.16.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "slugify": "^1.6.6",
@@ -44,7 +44,7 @@
     "to-words": "^4.7.0"
   },
   "optionalDependencies": {
-    "puppeteer": "^24.16.0"
+    "puppeteer": "^24.16.1"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^4.19.0",
