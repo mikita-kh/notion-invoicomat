@@ -12,13 +12,6 @@ export class HtmlToPdfService {
     format: 'A4',
     landscape: false,
     displayHeaderFooter: false,
-    margin: {
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-    },
-    scale: 1,
   }
 
   constructor(private readonly pdfGenerator: PdfGenerator) {}
@@ -27,23 +20,19 @@ export class HtmlToPdfService {
     format = HtmlToPdfService.defaultOptions.format,
     landscape = HtmlToPdfService.defaultOptions.landscape,
     displayHeaderFooter = HtmlToPdfService.defaultOptions.displayHeaderFooter,
-    margin = HtmlToPdfService.defaultOptions.margin,
-    scale = HtmlToPdfService.defaultOptions.scale,
   }: HtmlToPdfOptions = {}): Promise<Buffer> {
     try {
-      this.logger.debug(`Starting PDF generation to ${this.pdfGenerator.constructor.name} provider`, { format, landscape, displayHeaderFooter, margin, scale })
+      this.logger.debug(`Starting PDF generation to ${this.pdfGenerator.constructor.name} provider`, { format, landscape, displayHeaderFooter })
       const pdf = await this.pdfGenerator.generatePdf(html, {
         format,
         landscape,
         displayHeaderFooter,
-        margin,
-        scale,
       })
       this.logger.debug('PDF generated successfully', { buffer: { size: pdf.length } })
       return pdf
     } catch (error) {
-      this.logger.error('Failed to generate PDF', error)
-      throw error
+      this.logger.error('Failed to generate PDF', { cause: error })
+      throw new Error('PDF generation failed', { cause: error })
     }
   }
 }

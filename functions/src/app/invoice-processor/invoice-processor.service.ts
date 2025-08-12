@@ -28,7 +28,7 @@ export class InvoiceProcessorService {
       await this.markReady(notionPageId, url, context)
     } catch (error) {
       await this.markFailed(notionPageId, error)
-      throw new Error(`Failed to process invoice for page: ${notionPageId}`)
+      throw new Error(`Failed to process invoice for page: ${notionPageId}`, { cause: error })
     }
   }
 
@@ -45,11 +45,7 @@ export class InvoiceProcessorService {
 
   private async generatePdf(context: InvoiceRendererContext) {
     this.logger.log('Generating PDF for invoice')
-    return this.invoiceRenderer.renderInvoiceAsPDF(context, {
-      // format: 'A4',
-      // scale: 0.75,
-      // printBackground: true,
-    })
+    return this.invoiceRenderer.renderInvoiceAsPDF(context)
   }
 
   private async upload(context: InvoiceRendererContext, pdf: Buffer): Promise<string> {
@@ -75,8 +71,8 @@ export class InvoiceProcessorService {
       this.logger.debug('Invoice data retrieved', invoiceData)
       return invoiceData
     } catch (error) {
-      this.logger.error(`Error retrieving invoice data for page: ${pageId}`, error)
-      throw error
+      this.logger.error(`Error retrieving invoice data for page: ${pageId}`, { cause: error })
+      throw new Error(`Failed to retrieve invoice data for page: ${pageId}`, { cause: error })
     }
   }
 
@@ -107,8 +103,8 @@ export class InvoiceProcessorService {
       this.logger.debug('Invoice PDF uploaded to Firebase Storage', { fileName: bucketPath.at(-1), fileUrl })
       return fileUrl
     } catch (error) {
-      this.logger.error(`Error saving invoice PDF to Firebase: ${bucketPath.join('/')}`, error)
-      throw error
+      this.logger.error(`Error saving invoice PDF to Firebase: ${bucketPath.join('/')}`, { cause: error })
+      throw new Error(`Failed to save invoice PDF to Firebase: ${bucketPath.join('/')}`, { cause: error })
     }
   }
 
@@ -122,8 +118,8 @@ export class InvoiceProcessorService {
       this.logger.log(`Updating Notion page ${pageId} '${this.notionInvoicePropertyName}' property with URL ${url}`)
       await this.notion.updatePageProperty(pageId, this.notionInvoicePropertyName, { type: 'files', files: [{ name, external: { url } }] })
     } catch (error) {
-      this.logger.error(`Error updating Notion page ${pageId} '${this.notionInvoicePropertyName}' property`, error)
-      throw error
+      this.logger.error(`Error updating Notion page ${pageId} '${this.notionInvoicePropertyName}' property`, { cause: error })
+      throw new Error(`Failed to update Notion page ${pageId} '${this.notionInvoicePropertyName}' property`, { cause: error })
     }
   }
 
@@ -137,7 +133,7 @@ export class InvoiceProcessorService {
       this.logger.log(`Updating Notion page ${pageId} '${this.notionInvoiceStatusName}' property with ${status}`)
       await this.notion.updatePageProperty(pageId, this.notionInvoiceStatusName, { type: 'status', status: { name: status } })
     } catch (error) {
-      this.logger.error(`Error updating Notion page ${pageId} '${this.notionInvoiceStatusName}' property`, error)
+      this.logger.error(`Error updating Notion page ${pageId} '${this.notionInvoiceStatusName}' property`, { cause: error })
     }
   }
 }
