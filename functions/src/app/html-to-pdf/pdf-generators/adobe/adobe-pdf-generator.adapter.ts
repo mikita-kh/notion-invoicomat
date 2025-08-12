@@ -37,7 +37,11 @@ export class AdobePdfGenerator extends PdfGenerator {
     A6: [4.1339, 5.8268],
   }
 
-  constructor(protected readonly config: ConfigService<Configuration>) {
+  private static readonly isSupportedFormat = (format: string): format is SupportedFormat => {
+    return format in AdobePdfGenerator.PAGE_SIZES
+  }
+
+  constructor(config: ConfigService<Configuration>) {
     super(config)
   }
 
@@ -72,8 +76,8 @@ export class AdobePdfGenerator extends PdfGenerator {
   }
 
   private buildAdobeParams(options: Required<PdfGenerationOptions>): HTMLToPDFParams {
-    const format = options.format.toUpperCase() as SupportedFormat
-    let pageSize = AdobePdfGenerator.PAGE_SIZES[format]
+    const format = options.format.toUpperCase()
+    let pageSize = AdobePdfGenerator.isSupportedFormat(format) ? AdobePdfGenerator.PAGE_SIZES[format] : AdobePdfGenerator.PAGE_SIZES.A4
 
     if (options.landscape) {
       pageSize = [pageSize[1], pageSize[0]]
