@@ -1,7 +1,6 @@
 import { Buffer } from 'node:buffer'
 import { Readable } from 'node:stream'
 import {
-  Asset,
   HTMLToPDFJob,
   HTMLToPDFParams,
   HTMLToPDFResult,
@@ -19,15 +18,11 @@ import { PdfGenerationOptions, PdfGenerator } from '../pdf-generator.adapter'
 type SupportedFormat = Uppercase<Required<PdfGenerationOptions>['format']>
 type PageSize = [width: number, height: number]
 
-interface AdobeError extends Error {
-  code?: string
-  details?: unknown
-}
-
 @Injectable()
 export class AdobePdfGenerator extends PdfGenerator {
   private readonly logger = new Logger(AdobePdfGenerator.name)
 
+  // Standard page sizes in inches (width, height)
   private static readonly PAGE_SIZES: Record<SupportedFormat, PageSize> = {
     LETTER: [8.5, 11],
     LEGAL: [8.5, 14],
@@ -42,28 +37,25 @@ export class AdobePdfGenerator extends PdfGenerator {
     A6: [4.1339, 5.8268],
   }
 
-  constructor(config: ConfigService<Configuration>) {
+  constructor(protected readonly config: ConfigService<Configuration>) {
     super(config)
   }
 
   async generatePdf(html: string, options: Required<PdfGenerationOptions>): Promise<Buffer> {
-    this.logger.debug('Starting Adobe PDF generation', {
-      format: options.format,
-      landscape: options.landscape,
-      scale: options.scale,
-    })
+    this.logger.debug('Starting Adobe PDF generation', options)
 
-    this.validateOptions(options)
-    const processedHtml = this.preprocessHtml(html, options)
-
-    let readStream: Readable | null = null
+    const readStream = Readable.from([Buffer.from(html, 'utf-8')])
 
     try {
-      readStream = Readable.from([Buffer.from(processedHtml, 'utf-8')])
-      const pdfServices = this.getPdfServices()
-
-      const inputAsset = await this.uploadHtml(pdfServices, readStream)
-      const job = this.createJob(inputAsset, options)
+      const pdfServices = new PDFServices({ credentials: this.buildCredentials() })
+      const inputAsset = await pdfServices.upload({
+        readStream,
+        mimeType: MimeType.HTML,
+      })
+      const job = new HTMLToPDFJob({
+        inputAsset,
+        params: this.buildAdobeParams(options),
+      })
       const buffer = await this.executeJob(pdfServices, job)
 
       this.logger.debug('Adobe PDF generation completed successfully', {
@@ -72,104 +64,11 @@ export class AdobePdfGenerator extends PdfGenerator {
 
       return buffer
     } catch (error) {
-      this.handleError(error as AdobeError, options)
-      throw error
+      this.logger.error('Adobe PDF generation failed', { cause: error })
+      throw new Error('PDF generation failed', { cause: error })
     } finally {
       readStream?.destroy()
     }
-  }
-
-  private validateOptions(options: Required<PdfGenerationOptions>): void {
-    // Validate scale
-    if (options.scale < 0.1 || options.scale > 2.0) {
-      throw new Error(`Invalid scale value: ${options.scale}. Must be between 0.1 and 2.0`)
-    }
-
-    // Validate format
-    const format = options.format.toUpperCase() as SupportedFormat
-    if (!(format in AdobePdfGenerator.PAGE_SIZES)) {
-      throw new Error(`Unsupported format: ${options.format}. Supported formats: ${Object.keys(AdobePdfGenerator.PAGE_SIZES).join(', ')}`)
-    }
-  }
-
-  private preprocessHtml(html: string, options: Required<PdfGenerationOptions>): string {
-    const styles = [
-      this.generateMarginsStyle(options.margin),
-      this.generateScaleStyle(options.scale),
-    ].filter((style): style is string => style !== null)
-
-    return this.injectStyles(html, styles)
-  }
-
-  private generateMarginsStyle(margins: PdfGenerationOptions['margin']): string | null {
-    if (!margins) {
-      return null
-    }
-
-    const marginStyles: string[] = []
-
-    for (const [side, value] of Object.entries(margins)) {
-      if (value) {
-        marginStyles.push(`margin-${side}: ${value}${typeof value === 'number' ? 'px' : ''};`)
-      }
-    }
-
-    if (marginStyles.length === 0) {
-      return null
-    }
-
-    return `
-      @page { ${marginStyles.join('')} }
-      body { margin: 0; padding: 0; }
-    `
-  }
-
-  private generateScaleStyle(scale: number): string | null {
-    if (!scale || scale === 1) {
-      return null
-    }
-
-    return `
-      body {
-        transform: scale(${scale});
-        transform-origin: top left;
-        width: ${100 / scale}%;
-      }
-    `
-  }
-
-  private injectStyles(html: string, styles: string[]): string {
-    const styleBlock = `<style>${styles.join('\n')}</style>`
-
-    if (html.includes('<head>')) {
-      return html.replace('<head>', `<head>${styleBlock}`)
-    } else if (html.includes('<html>')) {
-      return html.replace('<html>', `<html><head>${styleBlock}</head>`)
-    }
-
-    return `${styleBlock}${html}`
-  }
-
-  private getPdfServices(): PDFServices {
-    return new PDFServices({ credentials: this.buildCredentials() })
-  }
-
-  private async uploadHtml(pdfServices: PDFServices, readStream: Readable) {
-    try {
-      return await pdfServices.upload({
-        readStream,
-        mimeType: MimeType.HTML,
-      })
-    } catch (error) {
-      throw new Error(`Failed to upload HTML to Adobe PDF Services: ${(error as Error).message}`)
-    }
-  }
-
-  private createJob(inputAsset: Asset, options: Required<PdfGenerationOptions>): HTMLToPDFJob {
-    return new HTMLToPDFJob({
-      inputAsset,
-      params: this.buildAdobeParams(options),
-    })
   }
 
   private buildAdobeParams(options: Required<PdfGenerationOptions>): HTMLToPDFParams {
@@ -204,22 +103,8 @@ export class AdobePdfGenerator extends PdfGenerator {
       const streamAsset = await pdfServices.getContent({ asset: jobResult.result.asset })
       return await getStreamAsBuffer(streamAsset.readStream)
     } catch (error) {
-      throw new Error(`PDF job execution failed: ${(error as Error).message}`)
+      throw new Error(`PDF job execution failed`, { cause: error })
     }
-  }
-
-  private handleError(error: AdobeError, options: Required<PdfGenerationOptions>): void {
-    this.logger.error('Adobe PDF generation failed', {
-      message: error.message,
-      code: error.code,
-      details: error.details,
-      stack: error.stack,
-      options: {
-        format: options.format,
-        landscape: options.landscape,
-        scale: options.scale,
-      },
-    })
   }
 
   private buildCredentials(): ServicePrincipalCredentials {
