@@ -7,8 +7,8 @@ import { NotionTransformerService } from './notion-transformer.service'
 
 @Injectable()
 export class NotionService {
-  private readonly client: NotionClient
   private readonly logger = new Logger(NotionService.name)
+  private readonly client: NotionClient
 
   constructor(
     private readonly configService: ConfigService<Configuration>,
@@ -26,6 +26,25 @@ export class NotionService {
     return this.notionTransformerService.transform<T>({
       id,
       properties,
+    })
+  }
+
+  async getPageProperties(pageId: string) {
+    const getPageResponse = await this.client.pages.retrieve({
+      page_id: pageId,
+    })
+
+    if ('properties' in getPageResponse) {
+      return getPageResponse.properties
+    }
+
+    return {}
+  }
+
+  getPagePropertyById(pageId: string, propertyId: string) {
+    return this.client.pages.properties.retrieve({
+      page_id: pageId,
+      property_id: propertyId,
     })
   }
 

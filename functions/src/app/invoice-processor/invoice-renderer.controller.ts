@@ -1,16 +1,15 @@
 import { BadRequestException, Controller, Get, InternalServerErrorException, Logger, Param, Query, Res } from '@nestjs/common'
 import { Response } from 'express'
 import { parsePageId } from 'notion-utils'
-import { NotionService } from '../notion/notion.service'
-import { InvoiceData } from './invoice-renderer.interfaces'
-import { InvoiceRendererService } from './invoice-renderer.service'
+import { InvoiceRendererService } from '../invoice-renderer/invoice-renderer.service'
+import { InvoiceProcessorService } from './invoice-processor.service'
 
-@Controller('invoice/renderer')
-export class InvoiceRendererController {
-  private readonly logger = new Logger(InvoiceRendererController.name)
+@Controller('invoice/processor')
+export class InvoiceProcessorController {
+  private readonly logger = new Logger(InvoiceProcessorController.name)
 
   constructor(
-    private readonly notionService: NotionService,
+    private readonly invoiceProcessorService: InvoiceProcessorService,
     private readonly invoiceRendererService: InvoiceRendererService,
   ) {}
 
@@ -33,8 +32,7 @@ export class InvoiceRendererController {
     }
 
     try {
-      const data = await this.notionService.getNormalizedPageData<InvoiceData>(pageId)
-      const context = await this.invoiceRendererService.prepareRendererContext(data)
+      const context = await this.invoiceProcessorService.prepareRendererContext(pageId)
       if (format === 'html') {
         res.setHeader('Content-Type', 'text/html')
         res.send(await this.invoiceRendererService.renderInvoiceAsHTML(context))

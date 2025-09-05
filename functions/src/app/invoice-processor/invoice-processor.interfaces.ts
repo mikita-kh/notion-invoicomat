@@ -18,6 +18,7 @@ export interface InvoiceProcessingResult {
 }
 
 export enum InvoiceStatus {
+  ShouldProcess = 'Should process',
   InProgress = 'In progress',
   Ready = 'Ready',
   Error = 'Error',

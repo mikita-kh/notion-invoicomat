@@ -3,8 +3,7 @@ import process from 'node:process'
 export function configuration() {
   return {
     NOTION_API_KEY: process.env.NOTION_API_KEY,
-    SLACK_BOT_TOKEN: process.env.SLACK_BOT_TOKEN,
-    SLACK_SIGNING_SECRET: process.env.SLACK_SIGNING_SECRET,
+    NOTION_VERIFICATION_TOKEN: process.env.NOTION_VERIFICATION_TOKEN,
     PDF_SERVICES_CLIENT_ID: process.env.PDF_SERVICES_CLIENT_ID,
     PDF_SERVICES_CLIENT_SECRET: process.env.PDF_SERVICES_CLIENT_SECRET,
     GCLOUD_PROJECT: process.env.GCLOUD_PROJECT,

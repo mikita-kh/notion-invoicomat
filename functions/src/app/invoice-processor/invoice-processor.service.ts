@@ -1,6 +1,9 @@
 import { Buffer } from 'node:buffer'
 import { Injectable, Logger } from '@nestjs/common'
+import { StatusPropertyItemObjectResponse } from '@notionhq/client/build/src/api-endpoints'
 import slugify from 'slugify'
+import { Currency } from '../exchange/exchange.interfaces'
+import { ExchangeService } from '../exchange/exchange.service'
 import { FirebaseStorageService } from '../firebase/firebase-storage.service'
 import { InvoiceData, InvoiceRendererContext } from '../invoice-renderer/invoice-renderer.interfaces'
 import { InvoiceRendererService } from '../invoice-renderer/invoice-renderer.service'
@@ -11,17 +14,46 @@ import { InvoiceStatus } from './invoice-processor.interfaces'
 export class InvoiceProcessorService {
   private readonly logger = new Logger(InvoiceProcessorService.name)
 
+  private notionInvoiceStatusPropertyId: string | null = null
+
   constructor(
     private readonly notion: NotionService,
     private readonly invoiceRenderer: InvoiceRendererService,
+    private readonly exchange: ExchangeService,
     private readonly firebaseStorage: FirebaseStorageService,
   ) {}
 
-  async process(notionPageId: string) {
+  private async shouldProcess(notionPageId: string, propertyIds: string[]) {
+    if (!propertyIds.length) {
+      this.logger.log(`No properties to process for page ${notionPageId}`)
+      return false
+    }
+
+    const statusPropertyId = await this.getNotionInvoiceStatusPropertyId(notionPageId)
+
+    const hasStatusProperty = statusPropertyId !== null && propertyIds.includes(statusPropertyId)
+
+    if (hasStatusProperty) {
+      const property = await this.notion.getPagePropertyById(notionPageId, statusPropertyId)
+
+      if ((property as StatusPropertyItemObjectResponse).status?.name === InvoiceStatus.ShouldProcess) {
+        this.logger.log(`Property ${statusPropertyId} indicates the page should be processed.`)
+        return true
+      }
+    }
+
+    return false
+  }
+
+  async process(notionPageId: string, propertyIds: string[]) {
+    if (!this.shouldProcess(notionPageId, propertyIds)) {
+      return
+    }
+
     try {
       await this.markInProgress(notionPageId)
 
-      const context = await this.prepareContext(notionPageId)
+      const context = await this.prepareRendererContext(notionPageId)
       const pdf = await this.generatePdf(context)
       const url = await this.upload(context, pdf)
 
@@ -37,10 +69,22 @@ export class InvoiceProcessorService {
     await this.updateNotionPageStatusProperty(pageId, InvoiceStatus.InProgress)
   }
 
-  private async prepareContext(pageId: string): Promise<InvoiceRendererContext> {
+  async prepareRendererContext(pageId: string): Promise<InvoiceRendererContext> {
     this.logger.log(`Preparing context for page ${pageId}`)
     const invoiceData = await this.fetchInvoiceData(pageId)
-    return this.prepareRendererContext(invoiceData)
+    const [{ currency }] = invoiceData.entries
+    const exchange = await this.exchange.getRate(currency as Currency, invoiceData.sale_date ?? invoiceData.issue_date)
+
+    const context: InvoiceRendererContext = {
+      ...invoiceData,
+      invoice_in_foreign_currency: exchange.rate !== 1,
+      currency,
+      exchange,
+    }
+
+    this.logger.debug('Prepared renderer context', { context })
+
+    return context
   }
 
   private async generatePdf(context: InvoiceRendererContext) {
@@ -67,18 +111,13 @@ export class InvoiceProcessorService {
   private async fetchInvoiceData(pageId: string): Promise<InvoiceData> {
     try {
       this.logger.debug(`Retrieving invoice data for page: ${pageId}`)
-      const invoiceData = (await this.notion.getNormalizedPageData(pageId)) as InvoiceData
+      const invoiceData = (await this.notion.getNormalizedPageData<InvoiceData>(pageId))
       this.logger.debug('Invoice data retrieved', invoiceData)
       return invoiceData
     } catch (error) {
       this.logger.error(`Error retrieving invoice data for page: ${pageId}`, { cause: error })
       throw new Error(`Failed to retrieve invoice data for page: ${pageId}`, { cause: error })
     }
-  }
-
-  private async prepareRendererContext(data: InvoiceData): Promise<InvoiceRendererContext> {
-    this.logger.debug('Preparing renderer context for invoice data:', data)
-    return this.invoiceRenderer.prepareRendererContext(data)
   }
 
   private readonly bucketInvoicesRoot = 'invoices'
@@ -135,5 +174,14 @@ export class InvoiceProcessorService {
     } catch (error) {
       this.logger.error(`Error updating Notion page ${pageId} '${this.notionInvoiceStatusName}' property`, { cause: error })
     }
+  }
+
+  async getNotionInvoiceStatusPropertyId(pageId: string) {
+    if (!this.notionInvoiceStatusPropertyId) {
+      const pageProperties = await this.notion.getPageProperties(pageId)
+      this.notionInvoiceStatusPropertyId = pageProperties?.[this.notionInvoiceStatusName]?.id ?? null
+    }
+
+    return this.notionInvoiceStatusPropertyId
   }
 }
