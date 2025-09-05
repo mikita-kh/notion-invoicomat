@@ -35,4 +35,9 @@ export class FirebaseAdminService {
     this.initializeFirebaseAdmin()
     return admin.firestore()
   }
+
+  get firestore2() {
+    this.initializeFirebaseAdmin()
+    return admin.projectManagement()
+  }
 }

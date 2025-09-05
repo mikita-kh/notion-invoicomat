@@ -13,8 +13,7 @@ export const webhook = onRequest(
   {
     secrets: [
       'NOTION_API_KEY',
-      'SLACK_BOT_TOKEN',
-      'SLACK_SIGNING_SECRET',
+      'NOTION_VERIFICATION_TOKEN',
       'PDF_SERVICES_CLIENT_ID',
       'PDF_SERVICES_CLIENT_SECRET',
     ],
