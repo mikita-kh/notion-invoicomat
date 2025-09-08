@@ -3,7 +3,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Observable } from 'rxjs'
-import { Configuration } from '../config/configuration'
+import { Configuration } from '../config/config.interface'
 
 @Injectable()
 export class NotionEventsGuard implements CanActivate {

@@ -1,7 +1,7 @@
 import { Global, Inject, Module, OnModuleInit } from '@nestjs/common'
 import { ConfigService, ConfigModule as NestConfigModule } from '@nestjs/config'
 import { SecretManagerModule } from '../secret-manager/secret-manager.module'
-import { configuration } from './configuration'
+import { loadEnvVariables } from './load-env-variables'
 import { Secrets, SECRETS_TOKEN, SecretsProvider } from './secrets.provider'
 
 @Global()
@@ -11,7 +11,7 @@ import { Secrets, SECRETS_TOKEN, SecretsProvider } from './secrets.provider'
     NestConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env.local',
-      load: [configuration],
+      load: [loadEnvVariables],
     }),
   ],
   providers: [SecretsProvider],

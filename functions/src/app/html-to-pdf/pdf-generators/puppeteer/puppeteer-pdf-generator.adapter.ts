@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import chromium from '@sparticuz/chromium'
 import puppeteer, { Browser, Page } from 'puppeteer-core'
-import { Configuration } from '../../../config/configuration'
+import { Configuration } from '../../../config/config.interface'
 import { PdfGenerationOptions, PdfGenerator } from '../pdf-generator.adapter'
 
 @Injectable()

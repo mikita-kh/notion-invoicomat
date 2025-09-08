@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Client as NotionClient, PageObjectResponse, UpdatePageParameters } from '@notionhq/client'
-import { Configuration } from '../config/configuration'
+import { Configuration } from '../config/config.interface'
 import { NotionTransformerService } from './notion-transformer.service'
 
 @Injectable()
