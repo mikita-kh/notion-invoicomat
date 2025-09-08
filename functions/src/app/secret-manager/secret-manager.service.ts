@@ -22,26 +22,6 @@ export class SecretManagerService {
     return version.payload?.data?.toString() ?? null
   }
 
-  async checkIfExists(secretName: string): Promise<boolean | undefined> {
-    const parent = `projects/${this.projectId}`
-    try {
-      await this.client.getSecret({ name: `${parent}/secrets/${secretName}` })
-      return true
-    } catch (error: any) {
-      if (error.code === 5) { // NOT_FOUND
-        return false
-      } else if (error.code === 7) { // PERMISSION_DENIED
-        const policy = await this.client.getIamPolicy({
-          resource: `${parent}/secrets/${secretName}`,
-        })
-        this.logger.error(`Permission denied when accessing secret ${secretName}. Current IAM Policy:`, { ...policy })
-        return false
-      } else {
-        throw new Error(`Failed to check secret ${secretName}`, { cause: error })
-      }
-    }
-  }
-
   async createIfNotExists(secretName: string): Promise<void> {
     const parent = `projects/${this.projectId}`
     try {
@@ -71,20 +51,26 @@ export class SecretManagerService {
     }
   }
 
-  async getSecret(secretName: string): Promise<string | null> {
+  async getSecret(secretName: string): Promise<string | undefined> {
     try {
-      return await this.accessSecretVersion(secretName)
+      const secretValue = await this.accessSecretVersion(secretName)
+
+      if (typeof secretValue === 'string') {
+        return secretValue
+      }
     } catch (error: any) {
       if (error.code === 5) { // NOT_FOUND
         this.logger.warn(`Secret ${secretName} not found.`)
-        return null
-      } else if (error.code === 7) { // PERMISSION_DENIED
-        this.logger.error(`Permission denied when accessing secret ${secretName}.`, { error })
-        return null
       } else {
+        if (error.code === 7) { // PERMISSION_DENIED
+          this.logger.error(`Permission denied when accessing secret ${secretName}.`, { error })
+        }
+
         throw new Error(`Failed to access secret ${secretName}`, { cause: error })
       }
     }
+
+    return undefined
   }
 
   async saveSecret(secretName: string, payload: string): Promise<void> {
@@ -96,32 +82,10 @@ export class SecretManagerService {
     const parent = `projects/${this.projectId}`
     const secretPath = `${parent}/secrets/${secretName}`
 
-    this.logger.debug(`Saving secret ${secretName}...`, { payload })
-
     try {
-      await this.client.getSecret({ name: secretPath })
+      await this.createIfNotExists(secretName)
     } catch (error: any) {
-      if (error.code === 5) { // NOT_FOUND
-        this.logger.log(`Secret ${secretName} not found. Creating it...`)
-        await this.client.createSecret({
-          parent,
-          secretId: secretName,
-          secret: {
-            replication: {
-              automatic: {},
-            },
-          },
-        })
-        this.logger.log(`Secret ${secretName} created.`)
-      } else if (error.code === 7) { // PERMISSION_DENIED
-        const policy = await this.client.getIamPolicy({
-          resource: secretPath,
-        })
-        this.logger.error(`Permission denied when getting secret ${secretName}. Current IAM Policy:`, { ...policy })
-        throw new Error(`Permission denied when getting secret ${secretName}`, { cause: error })
-      } else {
-        throw new Error(`Failed to check secret ${secretName}`, { cause: error })
-      }
+      this.logger.warn(`Error ensuring secret ${secretName} exists`, { error })
     }
 
     try {
@@ -140,9 +104,9 @@ export class SecretManagerService {
           resource: secretPath,
         })
         this.logger.error(`Permission denied when accessing secret ${secretName}. Current IAM Policy:`, { ...policy })
-      } else {
-        throw new Error(`Failed to check secret ${secretName}`, { cause: error })
       }
+
+      throw new Error(`Failed to check secret ${secretName}`, { cause: error })
     }
 
     try {
@@ -156,8 +120,7 @@ export class SecretManagerService {
 
       this.logger.log(`Successfully saved secret ${name}.`)
     } catch (error: any) {
-      this.logger.warn(`Secret ${secretName} was not saved.`, { payload })
-      this.logger.error(`Error saving secret ${secretName}`, { error })
+      throw new Error(`Error saving secret ${secretName}`, { cause: error })
     }
   }
 }
