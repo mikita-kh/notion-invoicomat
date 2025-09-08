@@ -1,6 +1,6 @@
 import process from 'node:process'
 
-export function configuration() {
+export function loadEnvVariables() {
   return {
     NOTION_API_KEY: process.env.NOTION_API_KEY,
     NOTION_VERIFICATION_TOKEN: process.env.NOTION_VERIFICATION_TOKEN,
@@ -11,4 +11,4 @@ export function configuration() {
   } as const
 }
 
-export type Configuration = ReturnType<typeof configuration>
+export type EnvVariables = ReturnType<typeof loadEnvVariables>

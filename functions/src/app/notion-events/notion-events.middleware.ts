@@ -1,7 +1,7 @@
 import { Injectable, Logger, NestMiddleware } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { NextFunction, Request, Response } from 'express'
-import { Configuration } from '../config/configuration'
+import { Configuration } from '../config/config.interface'
 import { SecretManagerService } from '../secret-manager/secret-manager.service'
 
 interface NotionVerificationRequest {

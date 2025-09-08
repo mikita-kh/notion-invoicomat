@@ -12,7 +12,7 @@ import {
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { getStreamAsBuffer } from 'get-stream'
-import { Configuration } from '../../../config/configuration'
+import { Configuration } from '../../../config/config.interface'
 import { PdfGenerationOptions, PdfGenerator } from '../pdf-generator.adapter'
 
 type SupportedFormat = Uppercase<Required<PdfGenerationOptions>['format']>
