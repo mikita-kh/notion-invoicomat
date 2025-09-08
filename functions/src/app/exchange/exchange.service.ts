@@ -1,5 +1,4 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { Memoize } from '../shared/decorators/memoize.decorator'
 import { ExchangeRateAdapter } from './adapters/exchange-rate.adapter'
 import { EXCHANGE_MODULE_OPTIONS } from './exchange.constants'
 import { Currency, ExchangeRateResponse } from './exchange.interfaces'
@@ -14,7 +13,6 @@ export class ExchangeService {
     @Inject(EXCHANGE_MODULE_OPTIONS) private readonly config: ExchangeModuleOptions,
   ) {}
 
-  @Memoize()
   async getRate(currency: Currency, exchangeDate: string): Promise<ExchangeRateResponse> {
     if (currency === this.config.baseCurrency) {
       return {

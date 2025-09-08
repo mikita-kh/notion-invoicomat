@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Client as NotionClient, PageObjectResponse, UpdatePageParameters } from '@notionhq/client'
 import { Configuration } from '../config/configuration'
-import { Memoize } from '../shared/decorators/memoize.decorator'
 import { NotionTransformerService } from './notion-transformer.service'
 
 @Injectable()
@@ -19,7 +18,6 @@ export class NotionService {
     })
   }
 
-  @Memoize(5 * 60 * 1000) // Cache for 5 minutes
   async getNormalizedPageData<T extends Record<string, any> = Record<string, any>>(id: string) {
     const { properties } = await this.#retrievePageWithResolvedRelations(id)
 
