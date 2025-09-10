@@ -2,7 +2,6 @@ import path from 'node:path'
 import { Module } from '@nestjs/common'
 import { ExchangeModule } from '../exchange/exchange.module'
 import { HtmlDocumentModule } from '../html-document/html-document.module'
-import { HtmlToPdfModule } from '../html-to-pdf/html-to-pdf.module'
 import { InvoiceRendererService } from './invoice-renderer.service'
 
 @Module({
@@ -36,7 +35,6 @@ import { InvoiceRendererService } from './invoice-renderer.service'
         },
       },
     }),
-    HtmlToPdfModule.forFeature({ pdfGenerator: 'adobe' }),
   ],
   providers: [InvoiceRendererService],
   exports: [InvoiceRendererService],

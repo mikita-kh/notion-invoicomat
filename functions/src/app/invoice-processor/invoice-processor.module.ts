@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common'
 import { ExchangeModule } from '../exchange/exchange.module'
 import { FirebaseModule } from '../firebase/firebase.module'
+import { HtmlToPdfModule } from '../html-to-pdf/html-to-pdf.module'
 import { InvoiceRendererModule } from '../invoice-renderer/invoice-renderer.module'
 import { NotionModule } from '../notion/notion.module'
+import { InvoiceProcessorController } from './invoice-processor.controller'
 import { InvoiceProcessorService } from './invoice-processor.service'
-import { InvoiceProcessorController } from './invoice-renderer.controller'
 
 @Module({
   controllers: [InvoiceProcessorController],
@@ -15,6 +16,9 @@ import { InvoiceProcessorController } from './invoice-renderer.controller'
     }),
     FirebaseModule,
     InvoiceRendererModule,
+    HtmlToPdfModule.forFeature({
+      pdfGenerator: 'adobe',
+    }),
     NotionModule,
   ],
   providers: [InvoiceProcessorService],

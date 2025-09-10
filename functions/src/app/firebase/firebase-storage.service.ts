@@ -18,7 +18,7 @@ export class FirebaseStorageService {
     buffer: Buffer,
     fileName: string,
     contentType: string = 'application/pdf',
-  ): Promise<string> {
+  ): Promise<void> {
     try {
       this.logger.debug(`Uploading file: ${fileName}`)
 
@@ -26,14 +26,20 @@ export class FirebaseStorageService {
 
       await file.save(buffer, { contentType })
 
-      await file.makePublic()
-      const publicUrl = file.publicUrl()
-
-      this.logger.log(`File uploaded successfully: ${publicUrl}`)
-
-      return publicUrl
+      this.logger.log(`File uploaded successfully`)
     } catch (error) {
       this.logger.error(`Error uploading file: ${fileName}`, error)
+      throw error
+    }
+  }
+
+  async publicUrl(fileName: string): Promise<string> {
+    try {
+      const file = this.bucket.file(fileName)
+      await file.makePublic()
+      return file.publicUrl()
+    } catch (error) {
+      this.logger.error(`Error making file public: ${fileName}`, { error })
       throw error
     }
   }
@@ -61,5 +67,11 @@ export class FirebaseStorageService {
       this.logger.error(`Error checking file existence: ${fileName}`, error)
       return false
     }
+  }
+
+  async download(filename: string): Promise<Buffer> {
+    const file = this.bucket.file(filename)
+    const [contents] = await file.download()
+    return contents
   }
 }
