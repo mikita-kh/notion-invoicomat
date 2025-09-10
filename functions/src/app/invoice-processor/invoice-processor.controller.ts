@@ -1,6 +1,7 @@
 import { BadRequestException, Controller, Get, InternalServerErrorException, Logger, Param, Query, Res } from '@nestjs/common'
 import { Response } from 'express'
 import { parsePageId } from 'notion-utils'
+import { HtmlToPdfService } from '../html-to-pdf/html-to-pdf.service'
 import { InvoiceRendererService } from '../invoice-renderer/invoice-renderer.service'
 import { InvoiceProcessorService } from './invoice-processor.service'
 
@@ -11,6 +12,7 @@ export class InvoiceProcessorController {
   constructor(
     private readonly invoiceProcessorService: InvoiceProcessorService,
     private readonly invoiceRendererService: InvoiceRendererService,
+    private readonly htmlToPdfService: HtmlToPdfService,
   ) {}
 
   @Get(':id')
@@ -33,16 +35,12 @@ export class InvoiceProcessorController {
 
     try {
       const context = await this.invoiceProcessorService.prepareRendererContext(pageId)
+      const html = await this.invoiceRendererService.renderInvoiceAsHTML(context)
       if (format === 'html') {
         res.setHeader('Content-Type', 'text/html')
-        res.send(await this.invoiceRendererService.renderInvoiceAsHTML(context))
+        res.send(html)
       } else if (format === 'pdf') {
-        const pdfBuffer = await this.invoiceRendererService.renderInvoiceAsPDF(context, {
-          // format: 'A4',
-          // scale: 0.75,
-          // printBackground: true,
-        })
-
+        const pdfBuffer = await this.htmlToPdfService.generatePdf(html)
         res.setHeader('Content-Type', 'application/pdf')
         res.setHeader('Content-Disposition', 'inline; filename="invoice.pdf"')
         res.send(pdfBuffer)

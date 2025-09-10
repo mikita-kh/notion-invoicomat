@@ -1,10 +1,10 @@
-import { Buffer } from 'node:buffer'
+import { createHash } from 'node:crypto'
 import { Injectable, Logger } from '@nestjs/common'
-import { StatusPropertyItemObjectResponse } from '@notionhq/client/build/src/api-endpoints'
 import slugify from 'slugify'
 import { Currency } from '../exchange/exchange.interfaces'
 import { ExchangeService } from '../exchange/exchange.service'
 import { FirebaseStorageService } from '../firebase/firebase-storage.service'
+import { HtmlToPdfOptions, HtmlToPdfService } from '../html-to-pdf/html-to-pdf.service'
 import { InvoiceData, InvoiceRendererContext } from '../invoice-renderer/invoice-renderer.interfaces'
 import { InvoiceRendererService } from '../invoice-renderer/invoice-renderer.service'
 import { NotionService } from '../notion/notion.service'
@@ -14,13 +14,12 @@ import { InvoiceStatus } from './invoice-processor.interfaces'
 export class InvoiceProcessorService {
   private readonly logger = new Logger(InvoiceProcessorService.name)
 
-  private notionInvoiceStatusPropertyId: string | null = null
-
   constructor(
     private readonly notion: NotionService,
     private readonly invoiceRenderer: InvoiceRendererService,
     private readonly exchange: ExchangeService,
     private readonly firebaseStorage: FirebaseStorageService,
+    private readonly htmlToPdf: HtmlToPdfService,
   ) {}
 
   private async shouldProcess(notionPageId: string, propertyIds: string[]) {
@@ -29,24 +28,30 @@ export class InvoiceProcessorService {
       return false
     }
 
-    const statusPropertyId = await this.getNotionInvoiceStatusPropertyId(notionPageId)
+    const pageProperties = await this.notion.getPageProperties(notionPageId)
 
-    const hasStatusProperty = statusPropertyId !== null && propertyIds.includes(statusPropertyId)
-
-    if (hasStatusProperty) {
-      const property = await this.notion.getPagePropertyById(notionPageId, statusPropertyId)
-
-      if ((property as StatusPropertyItemObjectResponse).status?.name === InvoiceStatus.ShouldProcess) {
-        this.logger.log(`Property ${statusPropertyId} indicates the page should be processed.`)
-        return true
-      }
+    if (!pageProperties) {
+      return false
     }
 
+    const statusePoperty = pageProperties[this.notionInvoiceStatusName]
+
+    if (
+      statusePoperty?.id
+      && propertyIds.includes(statusePoperty.id)
+      && statusePoperty.type === 'status'
+      && statusePoperty.status?.name === InvoiceStatus.ShouldProcess
+    ) {
+      this.logger.log(`Property "${this.notionInvoiceStatusName}" has status ${InvoiceStatus.ShouldProcess} that indicates the page should be processed.`)
+      return true
+    }
+
+    this.logger.log(`No properties indicate the page should be processed.`)
     return false
   }
 
   async process(notionPageId: string, propertyIds: string[]) {
-    if (!this.shouldProcess(notionPageId, propertyIds)) {
+    if (!await this.shouldProcess(notionPageId, propertyIds)) {
       return
     }
 
@@ -54,8 +59,7 @@ export class InvoiceProcessorService {
       await this.markInProgress(notionPageId)
 
       const context = await this.prepareRendererContext(notionPageId)
-      const pdf = await this.generatePdf(context)
-      const url = await this.upload(context, pdf)
+      const url = await this.getOrCreatePdfUrl(context)
 
       await this.markReady(notionPageId, url, context)
     } catch (error) {
@@ -87,14 +91,33 @@ export class InvoiceProcessorService {
     return context
   }
 
-  private async generatePdf(context: InvoiceRendererContext) {
-    this.logger.log('Generating PDF for invoice')
-    return this.invoiceRenderer.renderInvoiceAsPDF(context)
+  private async renderHTML(context: InvoiceRendererContext) {
+    this.logger.log('Rendering HTML for invoice')
+    return this.invoiceRenderer.renderInvoiceAsHTML(context)
   }
 
-  private async upload(context: InvoiceRendererContext, pdf: Buffer): Promise<string> {
-    const [bucketRoot, folderName, fileName] = this.buildStoragePath(context)
-    return this.uploadToFirebaseStorage(pdf, [bucketRoot, folderName, fileName])
+  private async getOrCreatePdfUrl(context: InvoiceRendererContext, config?: HtmlToPdfOptions): Promise<string> {
+    this.logger.log('Resolving PDF for invoice')
+
+    const html = await this.renderHTML(context)
+    const htmlHash = createHash('md5').update(html).digest('hex')
+    const storagePath = this.buildStoragePath(context, htmlHash)
+
+    const existingPdf = await this.firebaseStorage.exists(storagePath)
+    if (!existingPdf) {
+      this.logger.log('Generating PDF for invoice')
+      const pdf = await this.htmlToPdf.generatePdf(html, config)
+
+      this.logger.log('Saving invoice PDF to Firebase')
+      await this.firebaseStorage.save(
+        pdf,
+        storagePath,
+        'application/pdf',
+      )
+      this.logger.debug('Invoice PDF uploaded to Firebase Storage', { fileName: storagePath.split('/').at(-1)?.split('-')?.[0] })
+    }
+
+    return this.firebaseStorage.publicUrl(storagePath)
   }
 
   private async markReady(pageId: string, url: string, context: InvoiceRendererContext): Promise<void> {
@@ -122,29 +145,10 @@ export class InvoiceProcessorService {
 
   private readonly bucketInvoicesRoot = 'invoices'
 
-  private buildStoragePath(invoiceData: InvoiceData): [string, string, string] {
+  private buildStoragePath(invoiceData: InvoiceData, htmlHash: string): string {
     const folderName = invoiceData.issue_date.split('-').slice(0, 2).join('-')
-    const fileName = `${invoiceData.client[0].id}-${invoiceData.invoice_number}.pdf`
-    return [this.bucketInvoicesRoot, folderName, slugify(fileName, { lower: false })]
-  }
-
-  private async uploadToFirebaseStorage(
-    pdfBuffer: Buffer,
-    bucketPath: string[],
-  ): Promise<string> {
-    try {
-      this.logger.log('Saving invoice PDF to Firebase')
-      const fileUrl = await this.firebaseStorage.save(
-        pdfBuffer,
-        bucketPath.join('/'),
-        'application/pdf',
-      )
-      this.logger.debug('Invoice PDF uploaded to Firebase Storage', { fileName: bucketPath.at(-1), fileUrl })
-      return fileUrl
-    } catch (error) {
-      this.logger.error(`Error saving invoice PDF to Firebase: ${bucketPath.join('/')}`, { cause: error })
-      throw new Error(`Failed to save invoice PDF to Firebase: ${bucketPath.join('/')}`, { cause: error })
-    }
+    const fileName = `${invoiceData.client[0].id}-${invoiceData.invoice_number}-${htmlHash}.pdf`
+    return [this.bucketInvoicesRoot, folderName, slugify(fileName, { lower: false })].join('/')
   }
 
   private readonly notionInvoicePropertyName = 'Invoice'
@@ -172,16 +176,7 @@ export class InvoiceProcessorService {
       this.logger.log(`Updating Notion page ${pageId} '${this.notionInvoiceStatusName}' property with ${status}`)
       await this.notion.updatePageProperty(pageId, this.notionInvoiceStatusName, { type: 'status', status: { name: status } })
     } catch (error) {
-      this.logger.error(`Error updating Notion page ${pageId} '${this.notionInvoiceStatusName}' property`, { cause: error })
+      this.logger.warn(`Error updating Notion page ${pageId} '${this.notionInvoiceStatusName}' property`, { cause: error })
     }
-  }
-
-  async getNotionInvoiceStatusPropertyId(pageId: string) {
-    if (!this.notionInvoiceStatusPropertyId) {
-      const pageProperties = await this.notion.getPageProperties(pageId)
-      this.notionInvoiceStatusPropertyId = pageProperties?.[this.notionInvoiceStatusName]?.id ?? null
-    }
-
-    return this.notionInvoiceStatusPropertyId
   }
 }
